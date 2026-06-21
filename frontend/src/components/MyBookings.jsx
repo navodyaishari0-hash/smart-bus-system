@@ -8,7 +8,7 @@ export default function MyBookings() {
 
     useEffect(() => {
         if (!user) return;
-        axios.get('http://localhost:5000/api/bookings/mybookings', {
+        axios.get('/api/bookings/mybookings', {
             headers: { Authorization: `Bearer ${user.token}` }
         })
         .then(res => setBookings(res.data))
@@ -71,3 +71,4 @@ export default function MyBookings() {
         </div>
     );
 }
+

@@ -7,7 +7,7 @@ export default function ConductorDashboard() {
     const { user } = useAuthStore();
 
     const fetchSchedules = () => {
-        axios.get('http://localhost:5000/api/schedules')
+        axios.get('/api/schedules')
             .then(res => setSchedules(res.data))
             .catch(err => console.error(err));
     };
@@ -19,7 +19,7 @@ export default function ConductorDashboard() {
     const toggleBusStatus = async (busId, currentStatus) => {
         try {
             const newStatus = currentStatus === 'Active' ? 'Broken' : 'Active';
-            await axios.patch(`http://localhost:5000/api/buses/${busId}/status`, { status: newStatus }, {
+            await axios.patch(`/api/buses/${busId}/status`, { status: newStatus }, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             fetchSchedules(); // Refresh the schedules list to see updated status
@@ -30,7 +30,7 @@ export default function ConductorDashboard() {
 
     const toggleSeat = async (scheduleId, seatId) => {
         try {
-            await axios.patch(`http://localhost:5000/api/schedules/${scheduleId}/seats/${seatId}/toggle`, {}, {
+            await axios.patch(`/api/schedules/${scheduleId}/seats/${seatId}/toggle`, {}, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             fetchSchedules(); // Refresh to see updated seat status
@@ -129,3 +129,4 @@ export default function ConductorDashboard() {
         </div>
     );
 }
+

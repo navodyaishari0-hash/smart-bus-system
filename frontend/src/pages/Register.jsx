@@ -13,7 +13,7 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
+            const res = await axios.post('/api/auth/register', { name, email, password });
             login(res.data);
             navigate('/passenger');
         } catch (error) {
@@ -33,3 +33,4 @@ export default function Register() {
         </div>
     );
 }
+

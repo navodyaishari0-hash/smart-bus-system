@@ -19,7 +19,7 @@ export default function BookSeat() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/schedules/${scheduleId}`)
+        axios.get(`/api/schedules/${scheduleId}`)
             .then(res => setSchedule(res.data))
             .catch(err => console.error(err));
     }, [scheduleId]);
@@ -48,7 +48,7 @@ export default function BookSeat() {
         }
         setLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/bookings', {
+            await axios.post('/api/bookings', {
                 scheduleId,
                 seatsToBook: selectedSeats,
                 passengerDetails: formData
@@ -255,3 +255,4 @@ export default function BookSeat() {
         </div>
     );
 }
+

@@ -1,34 +1,41 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const bookingSchema = new mongoose.Schema({
-    passenger: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+const Booking = sequelize.define('Booking', {
+    seatsBooked: {
+        type: DataTypes.JSON,
+        allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('seatsBooked');
+            if (typeof rawValue === 'string') {
+                try { return JSON.parse(rawValue); } catch (e) { return rawValue; }
+            }
+            return Array.isArray(rawValue) ? rawValue : [];
+        }
     },
-    schedule: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Schedule',
-        required: true
-    },
-    seatsBooked: [{
-        type: String,
-        required: true
-    }],
     totalFare: {
-        type: Number,
-        required: true
+        type: DataTypes.FLOAT,
+        allowNull: false
     },
     status: {
-        type: String,
-        enum: ['Pending', 'Confirmed', 'Cancelled'],
-        default: 'Confirmed'
+        type: DataTypes.ENUM('Pending', 'Confirmed', 'Cancelled'),
+        defaultValue: 'Confirmed'
     },
     paymentStatus: {
-        type: String,
-        enum: ['Unpaid', 'Paid'],
-        default: 'Paid'
+        type: DataTypes.ENUM('Unpaid', 'Paid'),
+        defaultValue: 'Paid'
+    },
+    startStop: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    endStop: {
+        type: DataTypes.STRING,
+        allowNull: false
     }
-}, { timestamps: true });
+    // passengerId and scheduleId will be added via associations in index.js
+}, {
+    timestamps: true
+});
 
-module.exports = mongoose.model('Booking', bookingSchema);
+module.exports = Booking;

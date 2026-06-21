@@ -1,26 +1,65 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const routeSchema = new mongoose.Schema({
+const Route = sequelize.define('Route', {
     name: {
-        type: String,
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     },
-    origin: {
-        type: String,
-        required: true
+    stops: {
+        type: DataTypes.JSON,
+        allowNull: false,
+        defaultValue: [],
+        get() {
+            const rawValue = this.getDataValue('stops');
+            if (typeof rawValue === 'string') {
+                try {
+                    return JSON.parse(rawValue);
+                } catch (e) {
+                    return rawValue;
+                }
+            }
+            return rawValue || [];
+        }
     },
-    destination: {
-        type: String,
-        required: true
+    startLocation: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            const stops = this.getDataValue('stops');
+            if (Array.isArray(stops) && stops.length > 0) return stops[0];
+            if (typeof stops === 'string') {
+                try {
+                    const parsed = JSON.parse(stops);
+                    return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+                } catch (e) { return null; }
+            }
+            return null;
+        }
+    },
+    endLocation: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            const stops = this.getDataValue('stops');
+            if (Array.isArray(stops) && stops.length > 0) return stops[stops.length - 1];
+            if (typeof stops === 'string') {
+                try {
+                    const parsed = JSON.parse(stops);
+                    return Array.isArray(parsed) && parsed.length > 0 ? parsed[parsed.length - 1] : null;
+                } catch (e) { return null; }
+            }
+            return null;
+        }
     },
     distance: {
-        type: Number, // in km
-        required: true
+        type: DataTypes.FLOAT,
+        allowNull: false
     },
     estimatedDuration: {
-        type: String, // e.g. "3 hours"
-        required: true
+        type: DataTypes.STRING,
+        allowNull: false
     }
-}, { timestamps: true });
+}, {
+    timestamps: true
+});
 
-module.exports = mongoose.model('Route', routeSchema);
+module.exports = Route;

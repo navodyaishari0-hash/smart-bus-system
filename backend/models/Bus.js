@@ -1,34 +1,32 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const busSchema = new mongoose.Schema({
+const Bus = sequelize.define('Bus', {
     busNumber: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING,
+        allowNull: false,
         unique: true
     },
     capacity: {
-        type: Number,
-        required: true,
-        default: 40
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 40
     },
     type: {
-        type: String,
-        enum: ['Standard', 'AC', 'Luxury'],
-        default: 'Standard'
+        type: DataTypes.ENUM('Standard', 'AC', 'Luxury'),
+        defaultValue: 'Standard'
     },
     photo: {
-        type: String,
-        default: ''
-    },
-    conductor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        type: DataTypes.STRING,
+        defaultValue: ''
     },
     status: {
-        type: String,
-        enum: ['Active', 'Broken', 'Maintenance'],
-        default: 'Active'
+        type: DataTypes.ENUM('Active', 'Broken', 'Maintenance'),
+        defaultValue: 'Active'
     }
-}, { timestamps: true });
+    // conductorId will be added via association in index.js
+}, {
+    timestamps: true
+});
 
-module.exports = mongoose.model('Bus', busSchema);
+module.exports = Bus;

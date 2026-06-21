@@ -1,7 +1,7 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { sequelize } = require('./models');
 
 dotenv.config();
 
@@ -12,10 +12,14 @@ app.use(express.json());
 
 const connectDB = async () => {
     try {
-        const conn = await mongoose.connect(process.env.MONGO_URI);
-        console.log(`✅ MongoDB Connected Successfully: ${conn.connection.host}`);
+        await sequelize.authenticate();
+        console.log(`✅ MySQL Connected Successfully via Sequelize`);
+        
+        // Use sync({ force: false, alter: true }) to auto-create tables if they don't exist
+        await sequelize.sync({ alter: true });
+        console.log(`✅ MySQL Database Synced`);
     } catch (error) {
-        console.error(`❌ MongoDB Connection Error: ${error.message}`);
+        console.error(`❌ MySQL Connection Error: ${error.message}`);
         process.exit(1);
     }
 };

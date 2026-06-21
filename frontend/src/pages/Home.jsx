@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
     const [routes, setRoutes] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [schedules, setSchedules] = useState([]);
     const [selectedOrigin, setSelectedOrigin] = useState('');
     const [selectedDestination, setSelectedDestination] = useState('');
@@ -11,15 +12,29 @@ export default function Home() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/routes')
+        axios.get('/api/routes')
             .then(res => setRoutes(res.data))
             .catch(err => console.error(err));
+        axios.get('/api/routes/locations')
+            .then(res => setLocations(res.data))
+            .catch(err => console.error(err));
     }, []);
+
+    const destinations = selectedOrigin
+        ? [...new Set(
+              routes
+                  .filter(r => r.stops?.includes(selectedOrigin))
+                  .flatMap(r => {
+                      const idx = r.stops.indexOf(selectedOrigin);
+                      return r.stops.slice(idx + 1);
+                  })
+          )].sort()
+        : locations;
 
     const handleSearch = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.get(`http://localhost:5000/api/schedules?origin=${selectedOrigin}&destination=${selectedDestination}&date=${selectedDate}`);
+            const res = await axios.get(`/api/schedules?origin=${selectedOrigin}&destination=${selectedDestination}&date=${selectedDate}`);
             setSchedules(res.data);
         } catch (error) {
             console.error(error);
@@ -47,10 +62,10 @@ export default function Home() {
                 <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '1.5rem', alignItems: 'center' }}>
                     <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.9rem' }}>From</label>
-                        <select value={selectedOrigin} onChange={(e) => setSelectedOrigin(e.target.value)} required style={{ width: '100%', marginBottom: 0 }}>
+                        <select value={selectedOrigin} onChange={(e) => { setSelectedOrigin(e.target.value); setSelectedDestination(''); }} required style={{ width: '100%', marginBottom: 0 }}>
                             <option value="">Origin</option>
-                            {[...new Set(routes.map(r => r.origin))].map(origin => (
-                                <option key={origin} value={origin}>{origin}</option>
+                            {locations.map(loc => (
+                                <option key={loc} value={loc}>{loc}</option>
                             ))}
                         </select>
                     </div>
@@ -58,7 +73,7 @@ export default function Home() {
                         <label style={{ display: 'block', marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.9rem' }}>To</label>
                         <select value={selectedDestination} onChange={(e) => setSelectedDestination(e.target.value)} required style={{ width: '100%', marginBottom: 0 }}>
                             <option value="">Destination</option>
-                            {[...new Set(routes.map(r => r.destination))].map(dest => (
+                            {destinations.filter(d => d !== selectedOrigin).map(dest => (
                                 <option key={dest} value={dest}>{dest}</option>
                             ))}
                         </select>
@@ -86,8 +101,8 @@ export default function Home() {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-primary)', margin: '0 0 0.5rem 0' }}>Rs. {schedule.fare}</p>
-                                    <button className="btn btn-primary" onClick={() => navigate(`/passenger/book/${schedule._id}`)}>
-                                        Book Seat
+                                    <button className="btn btn-primary" onClick={() => navigate(`/book-seats/${schedule._id}?startStop=${selectedOrigin}&endStop=${selectedDestination}`)}>
+                                        Select Seats
                                     </button>
                                 </div>
                             </div>
@@ -98,3 +113,4 @@ export default function Home() {
         </>
     );
 }
+
