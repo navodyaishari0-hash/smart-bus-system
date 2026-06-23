@@ -1,0 +1,71 @@
+# =============================================================================
+# Render Blueprint — Smart Bus System
+# Infrastructure-as-Code for Render (https://render.com)
+# Applies via: https://dashboard.render.com/blueprints
+# =============================================================================
+
+# ─── Databases ───────────────────────────────────────────────────────────────
+databases:
+  - name: smart-bus-db
+    databaseName: smart_bus_system
+    region: singapore
+    plan: free
+    postgresMajorVersion: 16
+    # Prevent external access; the web service connects over Render's internal
+    # network automatically when both resources belong to the same blueprint.
+    ipAllowList: []
+
+# ─── Services ────────────────────────────────────────────────────────────────
+services:
+  # Backend Web Service — Express API on port 10000
+  - type: web
+    name: smart-bus-api
+    runtime: node
+    repo: https://github.com/navodyaishari0-hash/smart-bus-system
+    branch: main
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    autoDeploy: true
+
+    envVars:
+      # ── Database connection (injected from the smart-bus-db instance above) ──
+      - key: DB_HOST
+        fromDatabase:
+          name: smart-bus-db
+          property: host
+      - key: DB_USER
+        fromDatabase:
+          name: smart-bus-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: smart-bus-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: smart-bus-db
+          property: database
+
+      # ── ORM dialect ──
+      - key: DB_DIALECT
+        value: postgres
+
+      # ── SSL — pg driver reads this env var automatically ──
+      - key: PGSSLMODE
+        value: require
+
+      # ── Auth secret (auto-generated on first deploy) ──
+      - key: JWT_SECRET
+        generateValue: true
+
+      # ── Twilio (optional; leave blank if not used) ──
+      - key: TWILIO_ACCOUNT_SID
+        value: ""
+      - key: TWILIO_AUTH_TOKEN
+        value: ""
+      - key: TWILIO_PHONE_NUMBER
+        value: ""
+
+    # ── Render automatically assigns PORT — our server.js reads process.env.PORT ──
