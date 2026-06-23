@@ -8,7 +8,10 @@ export default function ConductorDashboard() {
 
     const fetchSchedules = () => {
         axios.get('/api/schedules')
-            .then(res => setSchedules(res.data))
+            .then(res => {
+                const mySchedules = res.data.filter(s => s.bus?.conductorId === user?.id);
+                setSchedules(mySchedules);
+            })
             .catch(err => console.error(err));
     };
 

@@ -33,6 +33,12 @@ export default function AdminDashboard() {
     const [schedTime, setSchedTime] = useState('');
     const [schedFare, setSchedFare] = useState('');
 
+    // Conductor form
+    const [showConductorForm, setShowConductorForm] = useState(false);
+    const [condName, setCondName] = useState('');
+    const [condEmail, setCondEmail] = useState('');
+    const [condPassword, setCondPassword] = useState('');
+
     useEffect(() => { fetchData(); }, []);
 
     const fetchData = async () => {
@@ -49,9 +55,7 @@ export default function AdminDashboard() {
             console.error(error);
         }
         try {
-            const resConductors = await axios.get('/api/auth/conductors', {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
+            const resConductors = await axios.get('/api/auth/conductors');
             setConductors(resConductors.data);
             if (resConductors.data.length > 0 && !selectedConductor) setSelectedConductor(resConductors.data[0]._id);
         } catch (error) {
@@ -136,6 +140,32 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleAddConductor = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post('/api/auth/register', { name: condName, email: condEmail, password: condPassword, role: 'conductor' }, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setShowConductorForm(false);
+            alert(`✅ Conductor added!\n\nName: ${condName}\nEmail: ${condEmail}\nPassword: ${condPassword}`);
+            setCondName(''); setCondEmail(''); setCondPassword('');
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to add conductor');
+        }
+    };
+
+    const handleAssignConductor = async (busId, conductorId) => {
+        try {
+            await axios.patch(`/api/buses/${busId}`, { conductor: conductorId || '' }, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to assign conductor');
+        }
+    };
+
     const statusColor = (status) => {
         switch (status) {
             case 'Active': return 'var(--success)';
@@ -174,6 +204,7 @@ export default function AdminDashboard() {
                 <button style={tabStyle('buses')} onClick={() => setActiveTab('buses')}>Buses ({buses.length})</button>
                 <button style={tabStyle('routes')} onClick={() => setActiveTab('routes')}>Routes ({routes.length})</button>
                 <button style={tabStyle('schedules')} onClick={() => setActiveTab('schedules')}>Schedules ({schedules.length})</button>
+                <button style={tabStyle('conductors')} onClick={() => setActiveTab('conductors')}>Conductors ({conductors.length})</button>
             </div>
 
             {activeTab === 'buses' && (
@@ -235,8 +266,14 @@ export default function AdminDashboard() {
                                         <h4 style={{ margin: '0 0 0.25rem 0' }}>{bus.busNumber}</h4>
                                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                             {bus.type} &middot; Cap: {bus.capacity}
-                                            {bus.conductor?.name ? ` &middot; Conductor: ${bus.conductor.name}` : ''}
                                         </p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.3rem' }}>
+                                            <select value={bus.conductor?._id || bus.conductorId || ''} onChange={e => handleAssignConductor(bus._id, e.target.value)}
+                                                style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}>
+                                                <option value="">No Conductor</option>
+                                                {conductors.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -314,6 +351,65 @@ export default function AdminDashboard() {
                                     style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '0.8rem', cursor: 'pointer', padding: '0.5rem 1rem' }}>
                                     Delete
                                 </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'conductors' && (
+                <div className="glass-panel">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: 0 }}>Conductors ({conductors.length})</h3>
+                        <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }} onClick={() => setShowConductorForm(!showConductorForm)}>
+                            {showConductorForm ? 'Cancel' : '+ Add Conductor'}
+                        </button>
+                    </div>
+
+                    {showConductorForm && (
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid var(--glass-border)' }}>
+                            <h4 style={{ marginBottom: '1rem', color: 'var(--accent-primary)' }}>Register New Conductor</h4>
+                            <form onSubmit={handleAddConductor} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <input type="text" placeholder="Full Name" value={condName} onChange={e => setCondName(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <input type="email" placeholder="Email" value={condEmail} onChange={e => setCondEmail(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <input type="text" placeholder="Password" value={condPassword} onChange={e => setCondPassword(e.target.value)} required minLength={4} />
+                                </div>
+                                <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
+                                    <button type="submit" className="btn btn-success" style={{ width: '100%' }}>Register Conductor</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {conductors.length === 0 ? (
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No conductors registered.</p>
+                        ) : conductors.map(c => (
+                            <div key={c._id} style={{
+                                padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.04)',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', minWidth: '2rem' }}>#{c._id}</span>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</p>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.email}</p>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <code style={{ fontSize: '0.75rem', background: 'rgba(245,158,11,0.15)', color: 'var(--warning)', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>
+                                        pass123
+                                    </code>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', background: 'rgba(59,130,246,0.1)', padding: '0.15rem 0.5rem', borderRadius: '10px' }}>
+                                        conductor
+                                    </span>
+                                </div>
                             </div>
                         ))}
                     </div>

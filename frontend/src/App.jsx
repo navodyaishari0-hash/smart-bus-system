@@ -2,6 +2,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import BookSeatsPage from './pages/BookSeatsPage';
 import PassengerDashboard from './pages/PassengerDashboard';
 import ConductorDashboard from './pages/ConductorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -40,6 +41,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/book-seats/:scheduleId" element={<BookSeatsPage />} />
         <Route path="/passenger/*" element={<PassengerDashboard />} />
         <Route path="/conductor/*" element={<ConductorDashboard />} />
         <Route path="/admin/*" element={<AdminDashboard />} />

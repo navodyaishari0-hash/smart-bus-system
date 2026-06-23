@@ -56,4 +56,27 @@ const updateBusStatus = async (req, res) => {
     }
 };
 
-module.exports = { getBuses, addBus, deleteBus, updateBusStatus };
+const updateBus = async (req, res) => {
+    try {
+        const bus = await Bus.findByPk(req.params.id);
+        if (!bus) return res.status(404).json({ message: 'Bus not found' });
+
+        const { busNumber, capacity, type, conductor, photo, status } = req.body;
+        if (busNumber !== undefined) bus.busNumber = busNumber;
+        if (capacity !== undefined) bus.capacity = capacity;
+        if (type !== undefined) bus.type = type;
+        if (conductor !== undefined) bus.conductorId = conductor || null;
+        if (photo !== undefined) bus.photo = photo;
+        if (status !== undefined) bus.status = status;
+        await bus.save();
+
+        const updated = await Bus.findByPk(req.params.id, {
+            include: [{ model: User, as: 'conductor', attributes: ['id', 'name', 'email'] }]
+        });
+        res.json(formatBus(updated));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getBuses, addBus, deleteBus, updateBusStatus, updateBus };

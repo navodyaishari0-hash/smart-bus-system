@@ -93,11 +93,13 @@ export default function Home() {
                         {schedules.map(schedule => (
                             <div key={schedule._id} style={{ background: 'rgba(255,255,255,0.1)', padding: '1.5rem', borderRadius: '16px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'transform 0.2s', cursor: 'pointer' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                                 <div>
-                                    <h3 style={{ margin: '0 0 0.5rem 0', color: 'white', fontSize: '1.3rem' }}>{schedule.route?.name}</h3>
-                                    <p style={{ color: '#94a3b8', margin: 0, display: 'flex', gap: '1rem' }}>
+                                    <h3 style={{ margin: '0 0 0.3rem 0', color: 'white', fontSize: '1.3rem' }}>{schedule.route?.name}</h3>
+                                    <div style={{ color: '#94a3b8', margin: '0 0 0.3rem 0', display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.9rem' }}>
+                                        <span>🚌 {schedule.bus?.busNumber} ({schedule.bus?.type})</span>
                                         <span>📅 {schedule.departureDate.split('T')[0]}</span>
                                         <span>⏰ {schedule.departureTime}</span>
-                                    </p>
+                                        <span>💺 {schedule.seats?.filter(s => !s.isBooked).length || 0} seats</span>
+                                    </div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-primary)', margin: '0 0 0.5rem 0' }}>Rs. {schedule.fare}</p>
