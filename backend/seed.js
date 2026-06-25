@@ -117,22 +117,22 @@ const seedDB = async () => {
         }
         const createdConductors = await User.bulkCreate(conductors, { returning: true });
 
+        const busTypePhotos = {
+            'AC':       'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=400&h=300&fit=crop',
+            'Standard': 'https://images.unsplash.com/photo-1478359900967-91ec0c6edc60?w=400&h=300&fit=crop',
+            'Luxury':   'https://images.unsplash.com/photo-1557223562-6c77ef16210f?w=400&h=300&fit=crop'
+        };
         const busTypes = ['AC', 'Standard', 'Luxury'];
-        const busPhotos = [
-            'https://images.unsplash.com/photo-1542367597-3a6b6f1fd6b7?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1520790166724-6b5c5f25f7b1?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=1200&auto=format&fit=crop'
-        ];
 
         const busesToCreate = [];
         for (let i = 0; i < totalBuses; i++) {
+            const type = busTypes[i % busTypes.length];
             busesToCreate.push({
                 busNumber: `WP-ND-${1000 + i}`,
                 capacity: 40,
-                type: busTypes[i % busTypes.length],
+                type: type,
                 conductorId: createdConductors[i].id,
-                photo: busPhotos[i % busPhotos.length],
+                photo: busTypePhotos[type],
                 status: 'Active',
                 createdAt: new Date(),
                 updatedAt: new Date()

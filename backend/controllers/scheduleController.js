@@ -157,13 +157,35 @@ const addSchedule = async (req, res) => {
 
 const getScheduleSeats = async (req, res) => {
     try {
+        const schedule = await Schedule.findByPk(req.params.id, {
+            attributes: ['id'],
+            include: [{ model: Route, as: 'route', attributes: ['stops'] }]
+        });
         const seats = await Seat.findAll({
             where: { scheduleId: req.params.id },
             attributes: { exclude: ['scheduleId'] }
         });
+        const routeStops = schedule?.route?.stops || [];
         const formatted = seats.map(s => {
             const seat = s.toJSON();
             seat._id = seat.id;
+
+            let isOverlapping = false;
+            if (seat.bookedSegments && seat.bookedSegments.length > 0) {
+                if (routeStops.length > 1) {
+                    for (const segment of seat.bookedSegments) {
+                        const overlapStart = Math.max(0, segment.start);
+                        const overlapEnd = Math.min(routeStops.length - 1, segment.end);
+                        if (overlapStart < overlapEnd) {
+                            isOverlapping = true;
+                            break;
+                        }
+                    }
+                } else {
+                    isOverlapping = true;
+                }
+            }
+            seat.isBooked = isOverlapping;
             return seat;
         });
         res.json(formatted);

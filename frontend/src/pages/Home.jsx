@@ -9,6 +9,9 @@ export default function Home() {
     const [selectedOrigin, setSelectedOrigin] = useState('');
     const [selectedDestination, setSelectedDestination] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
+    const [searching, setSearching] = useState(false);
+    const [searched, setSearched] = useState(false);
+    const [searchError, setSearchError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -33,11 +36,18 @@ export default function Home() {
 
     const handleSearch = async (e) => {
         e.preventDefault();
+        setSearching(true);
+        setSearched(true);
+        setSearchError(null);
         try {
             const res = await axios.get(`/api/schedules?origin=${selectedOrigin}&destination=${selectedDestination}&date=${selectedDate}`);
             setSchedules(res.data);
         } catch (error) {
             console.error(error);
+            setSearchError(error.response?.data?.message || error.message || 'Search failed. Is the backend running?');
+            setSchedules([]);
+        } finally {
+            setSearching(false);
         }
     };
 
@@ -83,13 +93,31 @@ export default function Home() {
                         <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} required style={{ width: '100%', marginBottom: 0 }} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end', height: '100%' }}>
-                        <button type="submit" className="btn btn-primary" style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', height: '42px', marginTop: 'auto' }}>Search Buses</button>
+                        <button type="submit" className="btn btn-primary" disabled={searching} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', height: '42px', marginTop: 'auto', opacity: searching ? 0.6 : 1 }}>
+                            {searching ? 'Searching...' : 'Search Buses'}
+                        </button>
                     </div>
                 </form>
 
+                {/* Error */}
+                {searchError && (
+                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(239,68,68,0.15)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontSize: '0.9rem' }}>
+                        {searchError}
+                    </div>
+                )}
+
+                {/* No results */}
+                {searched && !searching && !searchError && schedules.length === 0 && (
+                    <div style={{ marginTop: '2rem', textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                        <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No buses found</p>
+                        <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Try a different route or date.</p>
+                    </div>
+                )}
+
+                {/* Results */}
                 {schedules.length > 0 && (
                     <div style={{ marginTop: '3rem' }}>
-                        <h3 style={{ color: 'white', marginBottom: '1.5rem' }}>Available Schedules</h3>
+                        <h3 style={{ color: 'white', marginBottom: '1.5rem' }}>Available Schedules ({schedules.length})</h3>
                         {schedules.map(schedule => (
                             <div key={schedule._id} style={{ background: 'rgba(255,255,255,0.1)', padding: '1.5rem', borderRadius: '16px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'transform 0.2s', cursor: 'pointer' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                                 <div>
@@ -103,7 +131,7 @@ export default function Home() {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-primary)', margin: '0 0 0.5rem 0' }}>Rs. {schedule.fare}</p>
-                                    <button className="btn btn-primary" onClick={() => navigate(`/book-seats/${schedule._id}?startStop=${selectedOrigin}&endStop=${selectedDestination}`)}>
+                                    <button className="btn btn-primary" onClick={() => navigate(`/book-seats/${schedule._id}?startStop=${encodeURIComponent(selectedOrigin)}&endStop=${encodeURIComponent(selectedDestination)}`)}>
                                         Select Seats
                                     </button>
                                 </div>
@@ -115,4 +143,3 @@ export default function Home() {
         </>
     );
 }
-

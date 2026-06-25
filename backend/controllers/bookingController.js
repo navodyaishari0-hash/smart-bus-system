@@ -105,6 +105,28 @@ const createBooking = async (req, res) => {
             endStop
         });
 
+        // Real-time notification via Socket.IO
+        try {
+            const passenger = await User.findByPk(req.user.id, { attributes: ['name', 'email'] });
+            const bus = await Bus.findByPk(schedule.busId);
+            const bookingData = {
+                message: `New booking from ${passenger?.name || 'A passenger'} for Bus ${bus?.busNumber || schedule.busId}!`,
+                booking: {
+                    passenger: passenger ? { name: passenger.name, email: passenger.email } : { email: req.user.email },
+                    busNumber: bus?.busNumber,
+                    routeName: schedule.route?.name,
+                    seats: seatsToBook,
+                    totalFare,
+                    startStop,
+                    endStop,
+                    time: new Date().toISOString()
+                }
+            };
+            req.io.emit('newBookingAlert', bookingData);
+        } catch (e) {
+            console.error('Socket emit error:', e.message);
+        }
+
         // Twilio SMS Integration
         let passengerPhone = req.body.passengerDetails?.phone || req.user.phone || '+94 77 000 0000';
         // Ensure phone starts with '+'

@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../config';
+import { Bell, X } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import AnalyticsDashboard from '../components/Analytics/AnalyticsDashboard';
+import AdminBookings from './AdminBookings';
 
 export default function AdminDashboard() {
     const [buses, setBuses] = useState([]);
@@ -8,7 +13,29 @@ export default function AdminDashboard() {
     const [conductors, setConductors] = useState([]);
     const [schedules, setSchedules] = useState([]);
     const [activeTab, setActiveTab] = useState('buses');
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifPanel, setShowNotifPanel] = useState(false);
+    const notifRef = useRef(null);
     const { user } = useAuthStore();
+
+    useEffect(() => {
+        const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+        socket.on('newBookingAlert', (data) => {
+            console.log('🔔 Socket notification received!', data);
+            setNotifications(prev => [data, ...prev]);
+        });
+        return () => socket.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (notifRef.current && !notifRef.current.contains(e.target)) {
+                setShowNotifPanel(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Bus form
     const [showBusForm, setShowBusForm] = useState(false);
@@ -198,6 +225,115 @@ export default function AdminDashboard() {
                     <h2 style={{ fontSize: '2rem', margin: 0 }}>Admin Dashboard</h2>
                     <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Manage fleet, routes, schedules, and personnel.</p>
                 </div>
+                <div ref={notifRef} style={{ position: 'relative' }}>
+                    <button onClick={() => setShowNotifPanel(prev => !prev)} style={{
+                        background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '10px',
+                        padding: '0.6rem', cursor: 'pointer', position: 'relative',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s'
+                    }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                    >
+                        <Bell size={22} style={{ color: 'var(--text-primary)' }} />
+                        {notifications.length > 0 && (
+                            <span style={{
+                                position: 'absolute', top: -4, right: -4,
+                                background: '#ef4444', color: 'white',
+                                fontSize: '0.65rem', fontWeight: 700,
+                                minWidth: '18px', height: '18px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: '50%', padding: '0 4px',
+                                boxShadow: '0 2px 8px rgba(239,68,68,0.5)'
+                            }}>
+                                {notifications.length > 99 ? '99+' : notifications.length}
+                            </span>
+                        )}
+                    </button>
+
+                    {showNotifPanel && (
+                        <div style={{
+                            position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem',
+                            width: '380px', maxHeight: '420px',
+                            background: 'rgba(15,23,42,0.97)',
+                            backdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '14px',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                            zIndex: 9999, overflow: 'hidden',
+                            display: 'flex', flexDirection: 'column'
+                        }}>
+                            <div style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.06)'
+                            }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                    Notifications ({notifications.length})
+                                </span>
+                                {notifications.length > 0 && (
+                                    <button onClick={() => setNotifications([])}
+                                        style={{
+                                            background: 'rgba(239,68,68,0.15)', border: 'none', borderRadius: '6px',
+                                            color: '#f87171', cursor: 'pointer', fontSize: '0.75rem',
+                                            padding: '0.3rem 0.7rem', fontWeight: 600,
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.25)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+                                    >
+                                        Clear All
+                                    </button>
+                                )}
+                            </div>
+                            <div style={{ overflowY: 'auto', flex: 1 }}>
+                                {notifications.length === 0 ? (
+                                    <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                        No new notifications
+                                    </div>
+                                ) : notifications.map((n, i) => (
+                                    <div key={i} style={{
+                                        padding: '0.85rem 1.25rem',
+                                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                        transition: 'background 0.2s'
+                                    }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                            <span style={{
+                                                width: '8px', height: '8px', borderRadius: '50%',
+                                                background: '#3b82f6', flexShrink: 0, marginTop: '6px'
+                                            }} />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                    {n.message}
+                                                </p>
+                                                {n.booking && (
+                                                    <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                                        {n.booking.routeName && <span>{n.booking.routeName}</span>}
+                                                        {n.booking.startStop && n.booking.endStop && (
+                                                            <span> &middot; {n.booking.startStop} → {n.booking.endStop}</span>
+                                                        )}
+                                                        <br />
+                                                        <span style={{ color: '#94a3b8' }}>
+                                                            Seats: {Array.isArray(n.booking.seats) ? n.booking.seats.join(', ') : n.booking.seats}
+                                                            {n.booking.totalFare && <> &middot; Rs. {n.booking.totalFare.toLocaleString()}</>}
+                                                        </span>
+                                                        {n.booking.time && (
+                                                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.15rem' }}>
+                                                                {new Date(n.booking.time).toLocaleTimeString()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
@@ -205,6 +341,8 @@ export default function AdminDashboard() {
                 <button style={tabStyle('routes')} onClick={() => setActiveTab('routes')}>Routes ({routes.length})</button>
                 <button style={tabStyle('schedules')} onClick={() => setActiveTab('schedules')}>Schedules ({schedules.length})</button>
                 <button style={tabStyle('conductors')} onClick={() => setActiveTab('conductors')}>Conductors ({conductors.length})</button>
+                <button style={tabStyle('analytics')} onClick={() => setActiveTab('analytics')}>Analytics</button>
+                <button style={tabStyle('bookings')} onClick={() => setActiveTab('bookings')}>Bookings</button>
             </div>
 
             {activeTab === 'buses' && (
@@ -260,7 +398,12 @@ export default function AdminDashboard() {
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <div style={{ width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', background: '#2d3748', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
-                                        {bus.photo ? <img src={bus.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🚌'}
+                                        {bus.photo
+                                    ? <img src={bus.photo} alt=""
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = '🚌'; }}
+                                    />
+                                    : '🚌'}
                                     </div>
                                     <div>
                                         <h4 style={{ margin: '0 0 0.25rem 0' }}>{bus.busNumber}</h4>
@@ -415,6 +558,9 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             )}
+
+            {activeTab === 'analytics' && <AnalyticsDashboard />}
+            {activeTab === 'bookings' && <AdminBookings />}
 
             {activeTab === 'schedules' && (
                 <div className="glass-panel">

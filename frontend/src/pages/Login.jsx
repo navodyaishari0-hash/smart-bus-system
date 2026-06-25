@@ -14,9 +14,7 @@ export default function Login() {
         try {
             const res = await axios.post('/api/auth/login', { email, password });
             login(res.data);
-            if (res.data.role === 'admin') navigate('/admin');
-            else if (res.data.role === 'conductor') navigate('/conductor');
-            else navigate('/passenger');
+            navigate('/dashboard');
         } catch (error) {
             alert(error.response?.data?.message || 'Login failed');
         }

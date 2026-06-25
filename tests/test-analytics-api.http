@@ -1,0 +1,38 @@
+### ──────────────────────────────────────────────
+### Smart Bus System — Analytics API Integration Tests
+### Uses VS Code REST Client extension (humao.rest-client)
+### ──────────────────────────────────────────────
+
+@baseUrl = http://localhost:5000/api
+
+### ─── 1. Login as Admin ───────────────────────
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@smartbus.com",
+    "password": "password123"
+}
+
+### ─── 2. Store Token ──────────────────────────
+# Copy the token value from the login response above,
+# then paste it below between the double quotes.
+# (REST Client doesn't auto-extract JSON — manual step)
+@authToken = PASTE_YOUR_JWT_TOKEN_HERE
+
+### ─── 3. GET Booking Trends ──────────────────
+GET {{baseUrl}}/analytics/bookings-trend
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### ─── 4. GET Seat Preference ─────────────────
+GET {{baseUrl}}/analytics/seat-preference
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### ─── 5. POST Seed Demo (optional) ──────────
+# Only uncomment if you want to re-seed from the API.
+# POST {{baseUrl}}/analytics/seed-demo
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json

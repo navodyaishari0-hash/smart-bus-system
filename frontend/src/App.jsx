@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import BookSeatsPage from './pages/BookSeatsPage';
+import Dashboard from './pages/Dashboard';
 import PassengerDashboard from './pages/PassengerDashboard';
 import ConductorDashboard from './pages/ConductorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -23,9 +24,7 @@ function App() {
           <Link to="/">Search Buses</Link>
           {user ? (
             <>
-              {user.role === 'passenger' && <Link to="/passenger">Dashboard</Link>}
-              {user.role === 'conductor' && <Link to="/conductor">Dashboard</Link>}
-              {user.role === 'admin' && <Link to="/admin">Dashboard</Link>}
+              <Link to="/dashboard">Dashboard</Link>
               <a href="#" onClick={(e) => { e.preventDefault(); logout(); }}>Logout</a>
             </>
           ) : (
@@ -42,6 +41,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/book-seats/:scheduleId" element={<BookSeatsPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/passenger/*" element={<PassengerDashboard />} />
         <Route path="/conductor/*" element={<ConductorDashboard />} />
         <Route path="/admin/*" element={<AdminDashboard />} />

@@ -1,9 +1,8 @@
 import axios from 'axios';
-
-const isDev = import.meta.env.DEV;
+import { API_URL } from './config';
 
 const api = axios.create({
-  baseURL: isDev ? '' : (window._API_URL || '/api'),
+  baseURL: API_URL || '/api',
   headers: { 'Content-Type': 'application/json' }
 });
 

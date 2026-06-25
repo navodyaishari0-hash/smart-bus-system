@@ -511,7 +511,7 @@ export default function BookSeatsPage() {
         Schedule not found
       </div>
     );
-  const seatList = seats.length > 0 ? seats : schedule.seats || [];
+  const seatList = schedule.seats && schedule.seats.length > 0 ? schedule.seats : seats;
   return (
     <div
       className="glass-panel animate-fade-in"
