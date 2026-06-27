@@ -15,7 +15,7 @@ export default function Register() {
         try {
             const res = await axios.post('/api/auth/register', { name, email, password });
             login(res.data);
-            navigate('/passenger');
+            navigate(res.data.role === 'admin' ? '/admin' : res.data.role === 'conductor' ? '/conductor' : '/dashboard');
         } catch (error) {
             alert(error.response?.data?.message || 'Registration failed');
         }

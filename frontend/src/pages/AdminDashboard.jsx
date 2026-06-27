@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from '../config';
@@ -8,6 +9,11 @@ import AnalyticsDashboard from '../components/Analytics/AnalyticsDashboard';
 import AdminBookings from './AdminBookings';
 
 export default function AdminDashboard() {
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
+
+    useEffect(() => { if (!user?.token) navigate('/login'); }, [user, navigate]);
+
     const [buses, setBuses] = useState([]);
     const [routes, setRoutes] = useState([]);
     const [conductors, setConductors] = useState([]);
@@ -16,7 +22,6 @@ export default function AdminDashboard() {
     const [notifications, setNotifications] = useState([]);
     const [showNotifPanel, setShowNotifPanel] = useState(false);
     const notifRef = useRef(null);
-    const { user } = useAuthStore();
 
     useEffect(() => {
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });

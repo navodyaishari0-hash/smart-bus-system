@@ -1,10 +1,8 @@
 node_modules/
 .env
+*.exe
+cloudflared.exe
+System bus/
 dist/
-build/
 .DS_Store
 *.log
-backend/*.txt
-backend/check.js
-System bus/
-capstone_report.html

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Fragment, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -7,6 +8,10 @@ const GRID_COLS = 4;
 
 export default function ConductorDashboard() {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
+
+    useEffect(() => { if (!user?.token) navigate('/login'); }, [user, navigate]);
+
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

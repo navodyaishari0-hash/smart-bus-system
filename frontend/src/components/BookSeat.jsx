@@ -8,28 +8,21 @@ export default function BookSeat() {
     const [schedule, setSchedule] = useState(null);
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [step, setStep] = useState(1); // 1: seat selection, 2: confirm
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phone: '',
-        specialRequests: ''
-    });
+    const [fetchError, setFetchError] = useState(null);
+    const [step, setStep] = useState(1);
+    const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', specialRequests: '' });
     const { user } = useAuthStore();
     const navigate = useNavigate();
 
     useEffect(() => {
         axios.get(`/api/schedules/${scheduleId}`)
             .then(res => setSchedule(res.data))
-            .catch(err => console.error(err));
+            .catch(err => { console.error(err); setFetchError(err.response?.data?.message || 'Failed to load schedule'); });
     }, [scheduleId]);
 
     const toggleSeat = (seatNumber) => {
-        if (selectedSeats.includes(seatNumber)) {
-            setSelectedSeats(selectedSeats.filter(s => s !== seatNumber));
-        } else {
-            setSelectedSeats([...selectedSeats, seatNumber]);
-        }
+        if (selectedSeats.includes(seatNumber)) setSelectedSeats(selectedSeats.filter(s => s !== seatNumber));
+        else setSelectedSeats([...selectedSeats, seatNumber]);
     };
 
     const handleInputChange = (e) => {
@@ -43,18 +36,10 @@ export default function BookSeat() {
     };
 
     const handleBook = async () => {
-        if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) {
-            return alert('Please fill in all passenger details');
-        }
+        if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) return alert('Please fill in all passenger details');
         setLoading(true);
         try {
-            await axios.post('/api/bookings', {
-                scheduleId,
-                seatsToBook: selectedSeats,
-                passengerDetails: formData
-            }, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
+            await axios.post('/api/bookings', { scheduleId, seatsToBook: selectedSeats, passengerDetails: formData }, { headers: { Authorization: `Bearer ${user.token}` } });
             setLoading(false);
             alert('Booking confirmed successfully!');
             navigate('/passenger');
@@ -64,190 +49,117 @@ export default function BookSeat() {
         }
     };
 
-    if (!schedule) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading schedule...</div>;
+    if (fetchError) return (
+        <div className="glass-panel" style={{ padding: '2rem 1.25rem', textAlign: 'center', maxWidth: '600px', margin: '1rem', borderRadius: '16px' }}>
+            <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>Error</h4>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{fetchError}</p>
+            <button className="btn btn-primary" onClick={() => navigate('/')}>Back to Home</button>
+        </div>
+    );
+    if (!schedule) return <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading schedule...</div>;
 
     return (
-        <div className="glass-panel animate-fade-in" style={{ maxWidth: '900px', margin: '2rem auto', padding: '2rem' }}>
-            <h3 style={{ marginBottom: '2rem' }}>🚌 Seat Booking Form</h3>
-            
-            {/* Trip Details */}
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', fontSize: '0.95rem' }}>
-                    <div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>Bus</p>
-                        <p style={{ fontWeight: 'bold' }}>{schedule.bus?.busNumber}</p>
-                    </div>
-                    <div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>Route</p>
-                        <p style={{ fontWeight: 'bold' }}>{schedule.route?.name}</p>
-                    </div>
-                    <div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>Departure</p>
-                        <p style={{ fontWeight: 'bold' }}>{schedule.departureDate.split('T')[0]} at {schedule.departureTime}</p>
-                    </div>
-                    <div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>Fare per Seat</p>
-                        <p style={{ fontWeight: 'bold', color: 'var(--success)' }}>Rs. {schedule.fare}</p>
-                    </div>
+        <div className="glass-panel animate-fade-in" style={{ maxWidth: '900px', margin: '1rem', padding: '1.25rem', borderRadius: '16px' }}>
+            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Seat Booking</h3>
+
+            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
+                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>BUS</p><p style={{ fontWeight: 'bold' }}>{schedule.bus?.busNumber}</p></div>
+                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>ROUTE</p><p style={{ fontWeight: 'bold' }}>{schedule.route?.name}</p></div>
+                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>DEPARTURE</p><p style={{ fontWeight: 'bold' }}>{schedule.departureDate?.split('T')[0]} at {schedule.departureTime}</p></div>
+                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>FARE/SEAT</p><p style={{ fontWeight: 'bold', color: 'var(--success)' }}>Rs. {schedule.fare}</p></div>
                 </div>
             </div>
 
             {step === 1 ? (
                 <>
-                    {/* Seat Selection */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h4 style={{ marginBottom: '1rem' }}>Step 1: Select Your Seats</h4>
-                        <div style={{ 
-                            border: '2px solid var(--glass-border)', 
-                            borderRadius: '40px 40px 12px 12px', 
-                            padding: '2rem', 
-                            maxWidth: '500px',
-                            margin: '0 auto 2rem',
-                            background: 'rgba(0,0,0,0.2)' 
-                        }}>
-                            {/* Driver Area */}
-                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
-                                <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                    🚗 Driver
-                                </div>
-                            </div>
-                            
-                            {/* Seats Grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
-                                {schedule.seats.map((seat, index) => (
-                                    <Fragment key={seat._id}>
-                                        {index % 4 === 2 && <div />}
-                                        <button
-                                            disabled={seat.isBooked || seat.isBroken}
-                                            onClick={() => toggleSeat(seat.seatNumber)}
-                                            style={{
-                                                padding: '0.5rem 0.2rem',
-                                                borderRadius: '8px',
-                                                border: selectedSeats.includes(seat.seatNumber) ? '2px solid var(--success)' : '1px solid rgba(255,255,255,0.2)',
-                                                cursor: (seat.isBooked || seat.isBroken) ? 'not-allowed' : 'pointer',
-                                                background: seat.isBroken ? 'var(--warning)' : seat.isBooked ? 'var(--danger)' : selectedSeats.includes(seat.seatNumber) ? 'var(--success)' : 'rgba(255,255,255,0.1)',
-                                                color: 'white',
-                                                fontWeight: 'bold',
-                                                fontSize: '0.85rem',
-                                                transition: 'all 0.2s',
-                                                boxShadow: selectedSeats.includes(seat.seatNumber) ? '0 0 10px rgba(76, 175, 80, 0.5)' : 'inset 0 -3px 0 rgba(0,0,0,0.2)'
-                                            }}
-                                        >
-                                            {seat.seatNumber}
-                                        </button>
-                                    </Fragment>
-                                ))}
-                            </div>
+                    <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem' }}>Step 1: Select Your Seats</h4>
+                    <div style={{ border: '2px solid var(--glass-border)', borderRadius: '40px 40px 12px 12px', padding: '1.25rem', maxWidth: '500px', margin: '0 auto 1.5rem', background: 'rgba(0,0,0,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
+                            <div style={{ padding: '0.4rem 0.9rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 'bold' }}>Driver</div>
                         </div>
-
-                        {/* Seat Legend */}
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.85rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '20px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}></div>
-                                <span>Available</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '20px', height: '20px', background: 'var(--success)', borderRadius: '4px' }}></div>
-                                <span>Selected</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '20px', height: '20px', background: 'var(--danger)', borderRadius: '4px' }}></div>
-                                <span>Booked</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '20px', height: '20px', background: 'var(--warning)', borderRadius: '4px' }}></div>
-                                <span>Broken</span>
-                            </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.4rem' }}>
+                            {(schedule.seats || []).map((seat, index) => (
+                                <Fragment key={seat._id}>
+                                    {index % 4 === 2 && <div />}
+                                    <button disabled={seat.isBooked || seat.isBroken} onClick={() => toggleSeat(seat.seatNumber)}
+                                        style={{
+                                            padding: '0.45rem 0.1rem', borderRadius: '8px', fontSize: '0.75rem',
+                                            border: selectedSeats.includes(seat.seatNumber) ? '2px solid var(--success)' : '1px solid rgba(255,255,255,0.2)',
+                                            cursor: (seat.isBooked || seat.isBroken) ? 'not-allowed' : 'pointer',
+                                            background: seat.isBroken ? 'var(--warning)' : seat.isBooked ? 'var(--danger)' : selectedSeats.includes(seat.seatNumber) ? 'var(--success)' : 'rgba(255,255,255,0.1)',
+                                            color: 'white', fontWeight: 'bold',
+                                            transition: 'all 0.2s', boxShadow: selectedSeats.includes(seat.seatNumber) ? '0 0 10px rgba(76, 175, 80, 0.5)' : 'inset 0 -3px 0 rgba(0,0,0,0.2)'
+                                        }}>
+                                        {seat.seatNumber}
+                                    </button>
+                                </Fragment>
+                            ))}
                         </div>
-
-                        {/* Selected Seats Summary */}
-                        {selectedSeats.length > 0 && (
-                            <div style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
-                                <p style={{ color: 'var(--success)', fontWeight: 'bold', marginBottom: '0.5rem' }}>✓ {selectedSeats.length} seat{selectedSeats.length !== 1 ? 's' : ''} selected</p>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Seats: <strong>{selectedSeats.join(', ')}</strong></p>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Total: <strong style={{ color: 'var(--success)', fontSize: '1.1rem' }}>Rs. {schedule.fare * selectedSeats.length}</strong></p>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Continue Button */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-                        <button className="btn" onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.1)' }}>
-                            Cancel
-                        </button>
-                        <button className="btn btn-primary" onClick={handleContinue} disabled={selectedSeats.length === 0}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 'clamp(0.75rem, 3vw, 2rem)', fontSize: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                        {[
+                            { bg: 'rgba(255,255,255,0.1)', label: 'Available' },
+                            { bg: 'var(--success)', label: 'Selected' },
+                            { bg: 'var(--danger)', label: 'Booked' },
+                            { bg: 'var(--warning)', label: 'Broken' },
+                        ].map(item => (
+                            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <div style={{ width: '14px', height: '14px', background: item.bg, borderRadius: '4px' }} />
+                                <span>{item.label}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {selectedSeats.length > 0 && (
+                        <div style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', padding: '0.85rem', borderRadius: '10px', marginBottom: '1.5rem', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--success)', fontWeight: 'bold', marginBottom: '0.3rem', fontSize: '0.85rem' }}>{selectedSeats.length} seat{selectedSeats.length !== 1 ? 's' : ''} selected</p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Seats: <strong>{selectedSeats.join(', ')}</strong></p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Total: <strong style={{ color: 'var(--success)', fontSize: '0.95rem' }}>Rs. {schedule.fare * selectedSeats.length}</strong></p>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
+                        <button className="btn btn-primary" onClick={handleContinue} disabled={selectedSeats.length === 0}
+                            style={{ width: '100%', padding: '0.75rem', fontSize: '0.85rem', fontWeight: 600, borderRadius: '12px', opacity: selectedSeats.length === 0 ? 0.5 : 1 }}>
                             Continue to Details →
+                        </button>
+                        <button className="btn" onClick={() => navigate('/')} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: '12px' }}>
+                            Cancel
                         </button>
                     </div>
                 </>
             ) : (
                 <>
-                    {/* Passenger Details Form */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h4 style={{ marginBottom: '1rem' }}>Step 2: Passenger Details</h4>
-                        
-                        {/* Selected Seats */}
-                        <div style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '2rem' }}>
-                            <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>📍 Selected Seats: <strong>{selectedSeats.join(', ')}</strong></p>
-                            <p style={{ fontSize: '0.9rem' }}>💰 Total Amount: <strong style={{ color: 'var(--success)' }}>Rs. {schedule.fare * selectedSeats.length}</strong></p>
-                        </div>
-
-                        {/* Form */}
-                        <form style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Full Name *</label>
-                                <input 
-                                    type="text" 
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter your full name"
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', color: 'white' }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Email *</label>
-                                <input 
-                                    type="email" 
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter your email"
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', color: 'white' }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Phone Number *</label>
-                                <input 
-                                    type="tel" 
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter your phone number"
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', color: 'white' }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Special Requests</label>
-                                <input 
-                                    type="text" 
-                                    name="specialRequests"
-                                    value={formData.specialRequests}
-                                    onChange={handleInputChange}
-                                    placeholder="Any special requests?"
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', color: 'white' }}
-                                />
-                            </div>
-                        </form>
+                    <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem' }}>Step 2: Passenger Details</h4>
+                    <div style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', padding: '0.75rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
+                        <p style={{ fontSize: '0.8rem', marginBottom: '0.25rem' }}>Seats: <strong>{selectedSeats.join(', ')}</strong></p>
+                        <p style={{ fontSize: '0.8rem' }}>Total: <strong style={{ color: 'var(--success)' }}>Rs. {schedule.fare * selectedSeats.length}</strong></p>
                     </div>
 
-                    {/* Confirm Buttons */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-                        <button className="btn" onClick={() => setStep(1)} style={{ background: 'rgba(255,255,255,0.1)' }}>
-                            ← Back to Seats
+                    <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                        {[
+                            { name: 'fullName', label: 'Full Name *', type: 'text', placeholder: 'Enter your full name' },
+                            { name: 'email', label: 'Email *', type: 'email', placeholder: 'Enter your email' },
+                            { name: 'phone', label: 'Phone Number *', type: 'tel', placeholder: 'Enter your phone number' },
+                            { name: 'specialRequests', label: 'Special Requests', type: 'text', placeholder: 'Any special requests?' },
+                        ].map(f => (
+                            <div key={f.name}>
+                                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{f.label}</label>
+                                <input type={f.type} name={f.name} value={formData[f.name]} onChange={handleInputChange} placeholder={f.placeholder} required={f.name !== 'specialRequests'}
+                                    style={{ width: '100%', padding: '0.7rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '0.85rem' }} />
+                            </div>
+                        ))}
+                    </form>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
+                        <button className="btn btn-success" onClick={handleBook} disabled={loading}
+                            style={{ width: '100%', padding: '0.75rem', fontSize: '0.85rem', fontWeight: 600, borderRadius: '12px', opacity: loading ? 0.5 : 1 }}>
+                            {loading ? 'Processing...' : 'Confirm Booking'}
                         </button>
-                        <button className="btn btn-success" onClick={handleBook} disabled={loading} style={{ minWidth: '200px' }}>
-                            {loading ? 'Processing...' : '✓ Confirm Booking'}
+                        <button className="btn" onClick={() => setStep(1)} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: '12px' }}>
+                            ← Back to Seats
                         </button>
                     </div>
                 </>
@@ -255,4 +167,3 @@ export default function BookSeat() {
         </div>
     );
 }
-
