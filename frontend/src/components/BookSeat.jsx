@@ -3,6 +3,42 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
+function StepIndicator({ step, totalSteps }) {
+  const steps = [
+    { num: 1, label: "Select Seats" },
+    { num: 2, label: "Passenger Info" },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-0 mb-5">
+      {steps.map((s, i) => (
+        <Fragment key={s.num}>
+          <div className="flex flex-col items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+              step > s.num ? "bg-emerald-500 text-white" :
+              step === s.num ? "bg-emerald-500 text-white ring-4 ring-emerald-500/30" :
+              "bg-slate-700 text-slate-400"
+            }`}>
+              {step > s.num ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : s.num}
+            </div>
+            <span className={`text-[10px] mt-1.5 font-medium whitespace-nowrap ${
+              step >= s.num ? "text-emerald-400" : "text-slate-500"
+            }`}>{s.label}</span>
+          </div>
+          {i < steps.length - 1 && (
+            <div className={`w-full max-w-16 h-0.5 mx-2 mt-[-1.25rem] rounded-full transition-all duration-300 ${
+              step > s.num ? "bg-emerald-500" : "bg-slate-700"
+            }`} />
+          )}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
 export default function BookSeat() {
     const { scheduleId } = useParams();
     const [schedule, setSchedule] = useState(null);
@@ -50,120 +86,182 @@ export default function BookSeat() {
     };
 
     if (fetchError) return (
-        <div className="glass-panel" style={{ padding: '2rem 1.25rem', textAlign: 'center', maxWidth: '600px', margin: '1rem', borderRadius: '16px' }}>
-            <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>Error</h4>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{fetchError}</p>
-            <button className="btn btn-primary" onClick={() => navigate('/')}>Back to Home</button>
+        <div className="bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-8 text-center max-w-lg mx-auto my-4">
+            <h4 className="text-red-400 font-bold mb-2 text-lg">Error</h4>
+            <p className="text-sm text-slate-400 mb-4">{fetchError}</p>
+            <button onClick={() => navigate('/')} className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold px-6 py-2.5 rounded-xl text-sm cursor-pointer border-none shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
+                Back to Home
+            </button>
         </div>
     );
-    if (!schedule) return <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading schedule...</div>;
+    if (!schedule) return <div className="py-12 px-4 text-center text-slate-400 text-sm">Loading schedule...</div>;
+
+    const totalFare = schedule.fare * selectedSeats.length;
 
     return (
-        <div className="glass-panel animate-fade-in" style={{ maxWidth: '900px', margin: '1rem', padding: '1.25rem', borderRadius: '16px' }}>
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Seat Booking</h3>
+        <div className="animate-fade-in max-w-4xl mx-auto my-4 px-3 sm:px-4">
+            <StepIndicator step={step} totalSteps={2} />
 
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
-                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>BUS</p><p style={{ fontWeight: 'bold' }}>{schedule.bus?.busNumber}</p></div>
-                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>ROUTE</p><p style={{ fontWeight: 'bold' }}>{schedule.route?.name}</p></div>
-                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>DEPARTURE</p><p style={{ fontWeight: 'bold' }}>{schedule.departureDate?.split('T')[0]} at {schedule.departureTime}</p></div>
-                    <div><p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '0.2rem', letterSpacing: '0.5px' }}>FARE/SEAT</p><p style={{ fontWeight: 'bold', color: 'var(--success)' }}>Rs. {schedule.fare}</p></div>
+            <div className="bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 mb-4">
+                <h3 className="text-lg font-bold text-slate-100 mb-4">Seat Booking</h3>
+
+                <div className="grid grid-cols-2 gap-3 bg-black/20 rounded-xl p-3 sm:p-4 mb-4">
+                    <div>
+                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Bus</p>
+                        <p className="text-sm font-bold text-slate-100">{schedule.bus?.busNumber}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Route</p>
+                        <p className="text-sm font-bold text-slate-100">{schedule.route?.name}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Departure</p>
+                        <p className="text-sm font-bold text-slate-100">{schedule.departureDate?.split('T')[0]} at {schedule.departureTime}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Fare/Seat</p>
+                        <p className="text-sm font-bold text-emerald-400">Rs. {schedule.fare}</p>
+                    </div>
                 </div>
-            </div>
 
-            {step === 1 ? (
-                <>
-                    <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem' }}>Step 1: Select Your Seats</h4>
-                    <div style={{ border: '2px solid var(--glass-border)', borderRadius: '40px 40px 12px 12px', padding: '1.25rem', maxWidth: '500px', margin: '0 auto 1.5rem', background: 'rgba(0,0,0,0.2)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
-                            <div style={{ padding: '0.4rem 0.9rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 'bold' }}>Driver</div>
+                {step === 1 ? (
+                    <>
+                        <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xl border border-slate-200 max-w-xs sm:max-w-sm mx-auto">
+                            <div className="flex justify-end mb-4 pb-3 border-b-2 border-slate-100">
+                                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
+                            </div>
+                            <div className="overflow-x-auto -mx-4 sm:-mx-0 px-4 sm:px-0">
+                                <div className="grid grid-cols-5 gap-2 min-w-[220px]">
+                                    {(schedule.seats || []).map((seat, index) => (
+                                        <Fragment key={seat._id}>
+                                            {index % 5 === 2 && <div />}
+                                            <button
+                                                disabled={seat.isBooked || seat.isBroken}
+                                                onClick={() => toggleSeat(seat.seatNumber)}
+                                                className={`
+                                                    text-xs font-bold rounded-lg transition-all duration-200 select-none
+                                                    ${selectedSeats.includes(seat.seatNumber)
+                                                        ? "bg-emerald-600 text-white font-semibold shadow-lg scale-95 border-2 border-emerald-500"
+                                                        : seat.isBooked
+                                                            ? "bg-slate-200 text-slate-400 line-through cursor-not-allowed border border-slate-200"
+                                                            : seat.isBroken
+                                                                ? "bg-amber-400 text-white border border-amber-400 cursor-not-allowed"
+                                                                : "bg-slate-100 hover:bg-emerald-50 hover:border-emerald-300 text-slate-700 border border-slate-200 cursor-pointer"
+                                                    }
+                                                    ${!seat.isBooked && !seat.isBroken && !selectedSeats.includes(seat.seatNumber) ? "hover:scale-105 active:scale-95" : ""}
+                                                `}
+                                                style={{ aspectRatio: "1", padding: 0, minWidth: 0, minHeight: 0 }}
+                                            >
+                                                {seat.seatNumber}
+                                            </button>
+                                        </Fragment>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.4rem' }}>
-                            {(schedule.seats || []).map((seat, index) => (
-                                <Fragment key={seat._id}>
-                                    {index % 4 === 2 && <div />}
-                                    <button disabled={seat.isBooked || seat.isBroken} onClick={() => toggleSeat(seat.seatNumber)}
-                                        style={{
-                                            padding: '0.45rem 0.1rem', borderRadius: '8px', fontSize: '0.75rem',
-                                            border: selectedSeats.includes(seat.seatNumber) ? '2px solid var(--success)' : '1px solid rgba(255,255,255,0.2)',
-                                            cursor: (seat.isBooked || seat.isBroken) ? 'not-allowed' : 'pointer',
-                                            background: seat.isBroken ? 'var(--warning)' : seat.isBooked ? 'var(--danger)' : selectedSeats.includes(seat.seatNumber) ? 'var(--success)' : 'rgba(255,255,255,0.1)',
-                                            color: 'white', fontWeight: 'bold',
-                                            transition: 'all 0.2s', boxShadow: selectedSeats.includes(seat.seatNumber) ? '0 0 10px rgba(76, 175, 80, 0.5)' : 'inset 0 -3px 0 rgba(0,0,0,0.2)'
-                                        }}>
-                                        {seat.seatNumber}
+
+                        <div className="flex items-center justify-center gap-4 sm:gap-6 mt-4 text-xs text-slate-400 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-3.5 h-3.5 bg-slate-100 border border-slate-200 rounded" />
+                                <span>Available</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-3.5 h-3.5 bg-emerald-600 rounded shadow-sm" />
+                                <span>Selected</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-3.5 h-3.5 bg-slate-200 rounded" />
+                                <span>Booked</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-3.5 h-3.5 bg-amber-400 rounded" />
+                                <span>Broken</span>
+                            </div>
+                        </div>
+
+                        {selectedSeats.length > 0 && (
+                            <div className="sm:static sm:mt-4 fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 p-3 sm:p-4 sm:bg-slate-800/70 sm:backdrop-blur-xl sm:border sm:border-white/10 sm:rounded-2xl sm:static sm:z-auto">
+                                <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
+                                    <div className="text-sm text-slate-300 leading-tight">
+                                        <span className="text-emerald-400 font-bold">{selectedSeats.length}</span> seat{selectedSeats.length > 1 ? "s" : ""} selected
+                                        <span className="hidden sm:inline"> — <span className="text-slate-400">{selectedSeats.join(", ")}</span></span>
+                                        <div className="text-[10px] text-slate-500 sm:hidden">{selectedSeats.join(", ")}</div>
+                                        <div className="text-[10px] text-slate-500">Total: <span className="text-emerald-400 font-bold">Rs. {totalFare}</span></div>
+                                    </div>
+                                    <button
+                                        onClick={handleContinue}
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-2.5 sm:py-2 sm:px-8 rounded-xl transition-all shadow-lg shadow-emerald-900/30 active:scale-95 whitespace-nowrap cursor-pointer border-none"
+                                    >
+                                        Proceed to Book
                                     </button>
-                                </Fragment>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedSeats.length === 0 && (
+                            <div className="flex flex-col gap-3 mt-4">
+                                <button onClick={() => navigate('/')} className="w-full py-2.5 rounded-xl font-medium text-sm text-slate-300 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border-none">
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-500/30">
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                Rs. {totalFare}
+                            </span>
+                            <span className="text-xs text-slate-400">for {selectedSeats.length} seat{selectedSeats.length > 1 ? "s" : ""}</span>
+                        </div>
+
+                        <div className="space-y-4 mb-2">
+                            {[
+                                { name: 'fullName', label: 'Full Name *', type: 'text', placeholder: 'Enter your full name' },
+                                { name: 'email', label: 'Email *', type: 'email', placeholder: 'Enter your email' },
+                                { name: 'phone', label: 'Phone Number *', type: 'tel', placeholder: 'Enter your phone number' },
+                                { name: 'specialRequests', label: 'Special Requests', type: 'text', placeholder: 'Any special requests?' },
+                            ].map(f => (
+                                <div key={f.name}>
+                                    <label className="block mb-1.5 text-xs text-slate-400 font-medium">{f.label}</label>
+                                    <input
+                                        type={f.type} name={f.name} value={formData[f.name]}
+                                        onChange={handleInputChange} placeholder={f.placeholder}
+                                        required={f.name !== 'specialRequests'}
+                                        className="w-full py-3 px-4 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                    />
+                                </div>
                             ))}
                         </div>
-                    </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: 'clamp(0.75rem, 3vw, 2rem)', fontSize: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                        {[
-                            { bg: 'rgba(255,255,255,0.1)', label: 'Available' },
-                            { bg: 'var(--success)', label: 'Selected' },
-                            { bg: 'var(--danger)', label: 'Booked' },
-                            { bg: 'var(--warning)', label: 'Broken' },
-                        ].map(item => (
-                            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <div style={{ width: '14px', height: '14px', background: item.bg, borderRadius: '4px' }} />
-                                <span>{item.label}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    {selectedSeats.length > 0 && (
-                        <div style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', padding: '0.85rem', borderRadius: '10px', marginBottom: '1.5rem', textAlign: 'center' }}>
-                            <p style={{ color: 'var(--success)', fontWeight: 'bold', marginBottom: '0.3rem', fontSize: '0.85rem' }}>{selectedSeats.length} seat{selectedSeats.length !== 1 ? 's' : ''} selected</p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Seats: <strong>{selectedSeats.join(', ')}</strong></p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Total: <strong style={{ color: 'var(--success)', fontSize: '0.95rem' }}>Rs. {schedule.fare * selectedSeats.length}</strong></p>
+                        <div className="flex flex-col gap-3 mt-6 pb-20 sm:pb-0">
+                            <button
+                                onClick={handleBook}
+                                disabled={loading}
+                                className={`w-full py-3 sm:py-3.5 px-4 rounded-xl font-bold text-sm sm:text-base text-white transition-all cursor-pointer border-none ${
+                                    loading
+                                        ? "bg-emerald-600/50 cursor-not-allowed"
+                                        : "bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] shadow-lg shadow-emerald-900/30"
+                                }`}
+                            >
+                                {loading ? (
+                                    <span className="inline-flex items-center gap-2">
+                                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Processing...
+                                    </span>
+                                ) : "Confirm Booking"}
+                            </button>
+                            <button onClick={() => setStep(1)} className="w-full py-2.5 rounded-xl font-medium text-sm text-slate-300 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border-none">
+                                ← Back to Seats
+                            </button>
                         </div>
-                    )}
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
-                        <button className="btn btn-primary" onClick={handleContinue} disabled={selectedSeats.length === 0}
-                            style={{ width: '100%', padding: '0.75rem', fontSize: '0.85rem', fontWeight: 600, borderRadius: '12px', opacity: selectedSeats.length === 0 ? 0.5 : 1 }}>
-                            Continue to Details →
-                        </button>
-                        <button className="btn" onClick={() => navigate('/')} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: '12px' }}>
-                            Cancel
-                        </button>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <h4 style={{ marginBottom: '0.75rem', fontSize: '0.95rem' }}>Step 2: Passenger Details</h4>
-                    <div style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', padding: '0.75rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
-                        <p style={{ fontSize: '0.8rem', marginBottom: '0.25rem' }}>Seats: <strong>{selectedSeats.join(', ')}</strong></p>
-                        <p style={{ fontSize: '0.8rem' }}>Total: <strong style={{ color: 'var(--success)' }}>Rs. {schedule.fare * selectedSeats.length}</strong></p>
-                    </div>
-
-                    <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                        {[
-                            { name: 'fullName', label: 'Full Name *', type: 'text', placeholder: 'Enter your full name' },
-                            { name: 'email', label: 'Email *', type: 'email', placeholder: 'Enter your email' },
-                            { name: 'phone', label: 'Phone Number *', type: 'tel', placeholder: 'Enter your phone number' },
-                            { name: 'specialRequests', label: 'Special Requests', type: 'text', placeholder: 'Any special requests?' },
-                        ].map(f => (
-                            <div key={f.name}>
-                                <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{f.label}</label>
-                                <input type={f.type} name={f.name} value={formData[f.name]} onChange={handleInputChange} placeholder={f.placeholder} required={f.name !== 'specialRequests'}
-                                    style={{ width: '100%', padding: '0.7rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '0.85rem' }} />
-                            </div>
-                        ))}
-                    </form>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
-                        <button className="btn btn-success" onClick={handleBook} disabled={loading}
-                            style={{ width: '100%', padding: '0.75rem', fontSize: '0.85rem', fontWeight: 600, borderRadius: '12px', opacity: loading ? 0.5 : 1 }}>
-                            {loading ? 'Processing...' : 'Confirm Booking'}
-                        </button>
-                        <button className="btn" onClick={() => setStep(1)} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: '12px' }}>
-                            ← Back to Seats
-                        </button>
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
