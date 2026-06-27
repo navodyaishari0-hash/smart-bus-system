@@ -126,11 +126,11 @@ export default function BookSeat() {
 
                 {step === 1 ? (
                     <>
-                        <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 max-w-sm mx-auto">
+                        <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 max-w-sm md:max-w-2xl mx-auto">
                             <div className="flex justify-end mb-4 pb-3 border-b border-slate-700/50">
                                 <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
                             </div>
-                            <div className="grid grid-cols-5 gap-2 items-center justify-center">
+                            <div className="grid grid-cols-5 gap-2 md:gap-4 items-center justify-center">
                                 {(schedule.seats || []).map((seat, index) => {
                                     const isBooked = seat.isBooked || seat.status === "Booked";
                                     const isBroken = seat.isBroken || seat.status === "Broken";
@@ -143,8 +143,8 @@ export default function BookSeat() {
                                                 disabled={seatDisabled}
                                                 onClick={() => toggleSeat(seat.seatNumber)}
                                                 className={`
-                                                    w-full aspect-square text-xs md:text-sm font-semibold flex items-center justify-center
-                                                    rounded-xl transition-all duration-200 select-none
+                                                    w-full py-3 md:py-4 text-xs md:text-sm font-semibold rounded-xl
+                                                    transition-all duration-200 select-none flex items-center justify-center
                                                     ${isSelected
                                                         ? "bg-emerald-600 text-white shadow-lg scale-95 border-2 border-emerald-500"
                                                         : isBooked
