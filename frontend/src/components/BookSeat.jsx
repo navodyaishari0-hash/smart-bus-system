@@ -126,43 +126,47 @@ export default function BookSeat() {
 
                 {step === 1 ? (
                     <>
-                        <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xl border border-slate-200 max-w-xs sm:max-w-sm mx-auto">
-                            <div className="flex justify-end mb-4 pb-3 border-b-2 border-slate-100">
-                                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
+                        <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 max-w-sm mx-auto">
+                            <div className="flex justify-end mb-4 pb-3 border-b border-slate-700/50">
+                                <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
                             </div>
-                            <div className="overflow-x-auto -mx-4 sm:-mx-0 px-4 sm:px-0">
-                                <div className="grid grid-cols-5 gap-2 min-w-[220px]">
-                                    {(schedule.seats || []).map((seat, index) => (
+                            <div className="grid grid-cols-5 gap-2 items-center justify-center">
+                                {(schedule.seats || []).map((seat, index) => {
+                                    const isBooked = seat.isBooked || seat.status === "Booked";
+                                    const isBroken = seat.isBroken || seat.status === "Broken";
+                                    const isSelected = selectedSeats.includes(seat.seatNumber);
+                                    const seatDisabled = isBooked || isBroken;
+                                    return (
                                         <Fragment key={seat._id}>
-                                            {index % 5 === 2 && <div />}
+                                            {index % 4 === 2 && <div />}
                                             <button
-                                                disabled={seat.isBooked || seat.isBroken}
+                                                disabled={seatDisabled}
                                                 onClick={() => toggleSeat(seat.seatNumber)}
                                                 className={`
-                                                    text-xs font-bold rounded-lg transition-all duration-200 select-none
-                                                    ${selectedSeats.includes(seat.seatNumber)
-                                                        ? "bg-emerald-600 text-white font-semibold shadow-lg scale-95 border-2 border-emerald-500"
-                                                        : seat.isBooked
-                                                            ? "bg-slate-200 text-slate-400 line-through cursor-not-allowed border border-slate-200"
-                                                            : seat.isBroken
-                                                                ? "bg-amber-400 text-white border border-amber-400 cursor-not-allowed"
-                                                                : "bg-slate-100 hover:bg-emerald-50 hover:border-emerald-300 text-slate-700 border border-slate-200 cursor-pointer"
+                                                    w-full aspect-square text-xs md:text-sm font-semibold flex items-center justify-center
+                                                    rounded-xl transition-all duration-200 select-none
+                                                    ${isSelected
+                                                        ? "bg-emerald-600 text-white shadow-lg scale-95 border-2 border-emerald-500"
+                                                        : isBooked
+                                                            ? "bg-slate-700/60 text-slate-500 line-through cursor-not-allowed border border-slate-700"
+                                                            : isBroken
+                                                                ? "bg-amber-500/80 text-white border border-amber-500 cursor-not-allowed"
+                                                                : "bg-slate-700 hover:bg-emerald-900/40 hover:border-emerald-600 text-slate-200 border border-slate-600 cursor-pointer"
                                                     }
-                                                    ${!seat.isBooked && !seat.isBroken && !selectedSeats.includes(seat.seatNumber) ? "hover:scale-105 active:scale-95" : ""}
+                                                    ${!seatDisabled && !isSelected ? "hover:scale-105 active:scale-95" : ""}
                                                 `}
-                                                style={{ aspectRatio: "1", padding: 0, minWidth: 0, minHeight: 0 }}
                                             >
                                                 {seat.seatNumber}
                                             </button>
                                         </Fragment>
-                                    ))}
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         <div className="flex items-center justify-center gap-4 sm:gap-6 mt-4 text-xs text-slate-400 flex-wrap">
                             <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-slate-100 border border-slate-200 rounded" />
+                                <span className="w-3.5 h-3.5 bg-slate-700 border border-slate-600 rounded" />
                                 <span>Available</span>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -170,11 +174,11 @@ export default function BookSeat() {
                                 <span>Selected</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-slate-200 rounded" />
+                                <span className="w-3.5 h-3.5 bg-slate-700/60 border border-slate-700 rounded" />
                                 <span>Booked</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-amber-400 rounded" />
+                                <span className="w-3.5 h-3.5 bg-amber-500/80 rounded" />
                                 <span>Broken</span>
                             </div>
                         </div>

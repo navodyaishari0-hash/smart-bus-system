@@ -228,7 +228,7 @@ export default function BookSeatsPage() {
                   const seatDisabled = isBooked || isBroken;
                   return (
                     <Fragment key={seat._id || seat.id}>
-                      {index % 5 === 2 && <div />}
+                      {index % 4 === 2 && <div />}
                       <button
                         disabled={seatDisabled}
                         onClick={() => toggleSeat(seat.seatNumber)}
