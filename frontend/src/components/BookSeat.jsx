@@ -126,11 +126,11 @@ export default function BookSeat() {
 
                 {step === 1 ? (
                     <>
-                        <div className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 max-w-sm md:max-w-2xl mx-auto">
-                            <div className="flex justify-end mb-4 pb-3 border-b border-slate-700/50">
-                                <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
+                        <div className="bg-slate-900/50 md:bg-slate-800/70 md:backdrop-blur-xl p-4 md:p-6 rounded-3xl md:rounded-2xl border border-slate-800 md:border-slate-700/50 max-w-sm md:max-w-2xl mx-auto">
+                            <div className="flex justify-end mb-4 pb-3 border-b border-slate-700/50 md:border-slate-600/30">
+                                <span className="bg-slate-800 md:bg-slate-700/50 text-slate-400 md:text-slate-300 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
                             </div>
-                            <div className="grid grid-cols-5 gap-2 md:gap-4 items-center justify-center">
+                            <div className="grid grid-cols-5 md:grid-cols-4 gap-2 md:gap-x-6 md:gap-y-4 items-center justify-center">
                                 {(schedule.seats || []).map((seat, index) => {
                                     const isBooked = seat.isBooked || seat.status === "Booked";
                                     const isBroken = seat.isBroken || seat.status === "Broken";
@@ -138,22 +138,22 @@ export default function BookSeat() {
                                     const seatDisabled = isBooked || isBroken;
                                     return (
                                         <Fragment key={seat._id}>
-                                            {index % 4 === 2 && <div />}
+                                            {index % 4 === 2 && <div className="md:hidden" />}
                                             <button
                                                 disabled={seatDisabled}
                                                 onClick={() => toggleSeat(seat.seatNumber)}
                                                 className={`
-                                                    w-full py-3 md:py-4 text-xs md:text-sm font-semibold rounded-xl
+                                                    w-full py-2 md:py-4 text-xs md:text-sm font-semibold rounded-xl md:rounded-lg
                                                     transition-all duration-200 select-none flex items-center justify-center
                                                     ${isSelected
                                                         ? "bg-emerald-600 text-white shadow-lg scale-95 border-2 border-emerald-500"
                                                         : isBooked
-                                                            ? "bg-slate-700/60 text-slate-500 line-through cursor-not-allowed border border-slate-700"
+                                                            ? "bg-slate-700/60 md:bg-red-500/20 text-slate-500 md:text-red-300 line-through cursor-not-allowed border border-slate-700 md:border-red-500/30"
                                                             : isBroken
-                                                                ? "bg-amber-500/80 text-white border border-amber-500 cursor-not-allowed"
-                                                                : "bg-slate-700 hover:bg-emerald-900/40 hover:border-emerald-600 text-slate-200 border border-slate-600 cursor-pointer"
+                                                                ? "bg-amber-500/80 md:bg-amber-500/60 text-white border border-amber-500 cursor-not-allowed"
+                                                                : "bg-slate-700 hover:bg-emerald-900/40 hover:border-emerald-600 md:bg-slate-700/40 md:hover:bg-emerald-900/30 text-slate-200 border border-slate-600 md:border-slate-600/60 cursor-pointer"
                                                     }
-                                                    ${!seatDisabled && !isSelected ? "hover:scale-105 active:scale-95" : ""}
+                                                    ${!seatDisabled && !isSelected ? "hover:scale-105 active:scale-95 md:hover:scale-105" : ""}
                                                 `}
                                             >
                                                 {seat.seatNumber}
@@ -164,9 +164,9 @@ export default function BookSeat() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center gap-4 sm:gap-6 mt-4 text-xs text-slate-400 flex-wrap">
+                        <div className="flex items-center justify-center gap-4 md:gap-8 mt-4 md:mt-6 text-xs md:text-sm text-slate-400 flex-wrap">
                             <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-slate-700 border border-slate-600 rounded" />
+                                <span className="w-3.5 h-3.5 bg-slate-700 md:bg-slate-700/40 border border-slate-600 md:border-slate-600/60 rounded" />
                                 <span>Available</span>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -174,11 +174,11 @@ export default function BookSeat() {
                                 <span>Selected</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-slate-700/60 border border-slate-700 rounded" />
+                                <span className="w-3.5 h-3.5 bg-slate-700/60 md:bg-red-500/20 border border-slate-700 md:border-red-500/30 rounded" />
                                 <span>Booked</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-amber-500/80 rounded" />
+                                <span className="w-3.5 h-3.5 bg-amber-500/80 md:bg-amber-500/60 rounded" />
                                 <span>Broken</span>
                             </div>
                         </div>
