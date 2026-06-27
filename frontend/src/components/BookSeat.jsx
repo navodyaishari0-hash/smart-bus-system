@@ -99,7 +99,7 @@ export default function BookSeat() {
     const totalFare = schedule.fare * selectedSeats.length;
 
     return (
-        <div className="animate-fade-in max-w-4xl mx-auto my-4 px-3 sm:px-4">
+        <div className="animate-fade-in max-w-4xl mx-auto my-4 px-3 sm:px-4 pb-24 sm:pb-0">
             <StepIndicator step={step} totalSteps={2} />
 
             <div className="bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 mb-4">

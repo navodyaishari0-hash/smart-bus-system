@@ -186,7 +186,7 @@ export default function BookSeatsPage() {
   const totalFare = schedule.fare * selectedSeats.length;
 
   return (
-    <div className="animate-fade-in max-w-4xl mx-auto my-4 px-3 sm:px-4">
+    <div className="animate-fade-in max-w-4xl mx-auto my-4 px-3 sm:px-4 pb-24 sm:pb-0">
       <StepIndicator step={step} />
 
       <div className="bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 mb-4">
@@ -272,6 +272,14 @@ export default function BookSeatsPage() {
                 <span>Broken</span>
               </div>
             </div>
+
+            {selectedSeats.length === 0 && (
+              <div className="flex flex-col gap-3 mt-6">
+                <button onClick={() => navigate("/")} className="w-full py-2.5 rounded-xl font-medium text-sm text-slate-300 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border-none">
+                  Cancel
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <>
