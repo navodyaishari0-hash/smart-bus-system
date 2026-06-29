@@ -161,7 +161,7 @@ app.patch('/api/buses/:id/status', protect, conductor, async (req, res) => {
 app.get('/api/routes', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM routes');
-    res.json(rows.map(r => ({ ...r, stops: r.stops || [], _id:r.id })));
+    res.json(rows.map(r => ({ ...toCamel(r), stops: r.stops || [], _id:r.id })));
   } catch(e) { res.status(500).json({ message:e.message }); }
 });
 
@@ -183,7 +183,7 @@ app.post('/api/routes', protect, admin, async (req, res) => {
       'INSERT INTO routes (name,stops,distance,estimated_duration) VALUES ($1,$2,$3,$4) RETURNING *',
       [name,JSON.stringify(arr),distance,estimatedDuration]
     );
-    res.status(201).json({ ...route, stops: route.stops || [], _id:route.id });
+    res.status(201).json({ ...toCamel(route), stops: route.stops || [], _id:route.id });
   } catch(e) { res.status(500).json({ message:e.message }); }
 });
 

@@ -105,32 +105,57 @@ export default function BookSeat() {
             <div className="bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 mb-4">
                 <h3 className="text-lg font-bold text-slate-100 mb-4">Seat Booking</h3>
 
-                <div className="grid grid-cols-2 gap-3 bg-black/20 rounded-xl p-3 sm:p-4 mb-4">
-                    <div>
-                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Bus</p>
-                        <p className="text-sm font-bold text-slate-100">{schedule.bus?.busNumber}</p>
+                <div className="grid grid-cols-2 gap-3 bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-xl p-3 sm:p-4 mb-4 border border-slate-700/30">
+                    <div className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="3" width="22" height="18" rx="3" /><path d="M7 19v2M17 19v2M1 9h22M5 13h4M15 13h4" /></svg>
+                        <div>
+                            <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase font-medium">Bus</p>
+                            <p className="text-sm font-bold text-slate-100">{schedule.bus?.busNumber}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Route</p>
-                        <p className="text-sm font-bold text-slate-100">{schedule.route?.name}</p>
+                    <div className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 11l2-6h14l2 6M3 11v7a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h10v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-7M3 11h18M8 11V7M16 11V7M12 11V7" /></svg>
+                        <div>
+                            <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase font-medium">Route</p>
+                            <p className="text-sm font-bold text-slate-100">{schedule.route?.name}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Departure</p>
-                        <p className="text-sm font-bold text-slate-100">{schedule.departureDate?.split('T')[0]} at {schedule.departureTime}</p>
+                    <div className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /></svg>
+                        <div>
+                            <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase font-medium">Departure</p>
+                            <p className="text-sm font-bold text-slate-100">{schedule.departureDate?.split('T')[0]} <span className="text-slate-400 font-normal">at</span> {schedule.departureTime}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase">Fare/Seat</p>
-                        <p className="text-sm font-bold text-emerald-400">Rs. {schedule.fare}</p>
+                    <div className="flex items-start gap-2.5">
+                        <svg className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                        <div>
+                            <p className="text-[10px] text-slate-500 tracking-wider mb-0.5 uppercase font-medium">Fare/Seat</p>
+                            <p className="text-sm font-bold text-emerald-400">Rs. {schedule.fare}</p>
+                        </div>
                     </div>
                 </div>
 
                 {step === 1 ? (
                     <>
-                        <div className="bg-slate-900/50 md:bg-slate-800/70 md:backdrop-blur-xl p-4 md:p-6 rounded-3xl md:rounded-2xl border border-slate-800 md:border-slate-700/50 max-w-sm md:max-w-2xl mx-auto">
-                            <div className="flex justify-end mb-4 pb-3 border-b border-slate-700/50 md:border-slate-600/30">
-                                <span className="bg-slate-800 md:bg-slate-700/50 text-slate-400 md:text-slate-300 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider">DRIVER</span>
+                        <div className="bg-slate-900/50 md:bg-gradient-to-br md:from-slate-800/60 md:to-slate-900/60 p-4 md:p-6 rounded-3xl md:rounded-2xl border border-slate-800 md:border-slate-700/50 md:max-w-3xl mx-auto md:shadow-lg">
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700/50 md:border-slate-600/30">
+                                <span className="hidden md:flex items-center gap-2 text-[10px] text-slate-600 font-medium tracking-wider">
+                                    <svg className="w-5 h-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7"/></svg>
+                                    FRONT
+                                </span>
+                                <div className="flex items-center gap-3 ml-auto">
+                                    <div className="hidden md:flex gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-amber-400/80" />
+                                        <span className="w-2 h-2 rounded-full bg-amber-400/60" />
+                                    </div>
+                                    <span className="bg-slate-800 md:bg-slate-700/50 text-slate-400 md:text-slate-300 px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider flex items-center gap-1.5">
+                                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                                        DRIVER
+                                    </span>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-5 md:grid-cols-4 gap-2 md:gap-x-6 md:gap-y-4 items-center justify-center">
+                            <div className="grid grid-cols-5 md:grid-cols-4 gap-2 md:gap-x-6 md:gap-y-4 max-w-sm md:max-w-none mx-auto items-center justify-center">
                                 {(schedule.seats || []).map((seat, index) => {
                                     const isBooked = seat.isBooked || seat.status === "Booked";
                                     const isBroken = seat.isBroken || seat.status === "Broken";
@@ -143,17 +168,17 @@ export default function BookSeat() {
                                                 disabled={seatDisabled}
                                                 onClick={() => toggleSeat(seat.seatNumber)}
                                                 className={`
-                                                    w-full py-2 md:py-4 text-xs md:text-sm font-semibold rounded-xl md:rounded-lg
+                                                    w-full py-2 md:py-4 text-xs md:text-sm font-semibold rounded-xl md:rounded-xl
                                                     transition-all duration-200 select-none flex items-center justify-center
                                                     ${isSelected
-                                                        ? "bg-emerald-600 text-white shadow-lg scale-95 border-2 border-emerald-500"
+                                                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 scale-95 ring-2 ring-emerald-400/50 border-2 border-emerald-500"
                                                         : isBooked
                                                             ? "bg-slate-700/60 md:bg-red-500/20 text-slate-500 md:text-red-300 line-through cursor-not-allowed border border-slate-700 md:border-red-500/30"
                                                             : isBroken
                                                                 ? "bg-amber-500/80 md:bg-amber-500/60 text-white border border-amber-500 cursor-not-allowed"
-                                                                : "bg-slate-700 hover:bg-emerald-900/40 hover:border-emerald-600 md:bg-slate-700/40 md:hover:bg-emerald-900/30 text-slate-200 border border-slate-600 md:border-slate-600/60 cursor-pointer"
+                                                                : "bg-slate-700 hover:bg-emerald-900/50 hover:border-emerald-500 hover:shadow-sm hover:shadow-emerald-900/20 md:bg-slate-700/40 md:hover:bg-emerald-900/30 md:hover:border-emerald-500 text-slate-200 border border-slate-600 md:border-slate-600/60 cursor-pointer"
                                                     }
-                                                    ${!seatDisabled && !isSelected ? "hover:scale-105 active:scale-95 md:hover:scale-105" : ""}
+                                                    ${!seatDisabled && !isSelected ? "hover:scale-105 active:scale-95" : ""}
                                                 `}
                                             >
                                                 {seat.seatNumber}
@@ -164,37 +189,43 @@ export default function BookSeat() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center gap-4 md:gap-8 mt-4 md:mt-6 text-xs md:text-sm text-slate-400 flex-wrap">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-slate-700 md:bg-slate-700/40 border border-slate-600 md:border-slate-600/60 rounded" />
+                        <div className="flex items-center justify-center gap-3 md:gap-6 mt-4 md:mt-5 text-xs text-slate-400 flex-wrap">
+                            <div className="inline-flex items-center gap-1.5 bg-slate-800/50 md:bg-slate-700/20 px-2.5 py-1 rounded-full border border-slate-700/50">
+                                <span className="w-2.5 h-2.5 bg-slate-700 md:bg-slate-700/40 border border-slate-600 md:border-slate-600/60 rounded-full" />
                                 <span>Available</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-emerald-600 rounded shadow-sm" />
+                            <div className="inline-flex items-center gap-1.5 bg-emerald-900/20 px-2.5 py-1 rounded-full border border-emerald-700/30">
+                                <span className="w-2.5 h-2.5 bg-emerald-600 rounded-full shadow-sm shadow-emerald-500/40" />
                                 <span>Selected</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-slate-700/60 md:bg-red-500/20 border border-slate-700 md:border-red-500/30 rounded" />
+                            <div className="inline-flex items-center gap-1.5 bg-slate-800/50 md:bg-red-900/20 px-2.5 py-1 rounded-full border border-slate-700/50 md:border-red-700/30">
+                                <span className="w-2.5 h-2.5 bg-slate-700/60 md:bg-red-500/20 border border-slate-700 md:border-red-500/30 rounded-full" />
                                 <span>Booked</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-3.5 h-3.5 bg-amber-500/80 md:bg-amber-500/60 rounded" />
+                            <div className="inline-flex items-center gap-1.5 bg-amber-900/20 px-2.5 py-1 rounded-full border border-amber-700/30">
+                                <span className="w-2.5 h-2.5 bg-amber-500/80 md:bg-amber-500/60 rounded-full" />
                                 <span>Broken</span>
                             </div>
                         </div>
 
                         {selectedSeats.length > 0 && (
-                            <div className="sm:static sm:mt-4 fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 p-3 sm:p-4 sm:bg-slate-800/70 sm:backdrop-blur-xl sm:border sm:border-white/10 sm:rounded-2xl sm:static sm:z-auto">
+                            <div className="sm:static sm:mt-5 fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 p-3 sm:p-4 sm:bg-slate-800/80 sm:backdrop-blur-xl sm:border sm:border-slate-700/50 sm:rounded-2xl sm:static sm:z-auto sm:shadow-lg">
                                 <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
-                                    <div className="text-sm text-slate-300 leading-tight">
-                                        <span className="text-emerald-400 font-bold">{selectedSeats.length}</span> seat{selectedSeats.length > 1 ? "s" : ""} selected
-                                        <span className="hidden sm:inline"> — <span className="text-slate-400">{selectedSeats.join(", ")}</span></span>
-                                        <div className="text-[10px] text-slate-500 sm:hidden">{selectedSeats.join(", ")}</div>
-                                        <div className="text-[10px] text-slate-500">Total: <span className="text-emerald-400 font-bold">Rs. {totalFare}</span></div>
+                                    <div className="text-sm text-slate-300 leading-snug">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-emerald-400 font-bold text-base">{selectedSeats.length}</span>
+                                            <span>seat{selectedSeats.length > 1 ? "s" : ""} selected</span>
+                                            <span className="hidden sm:inline text-slate-500">—</span>
+                                            <span className="hidden sm:inline text-slate-400 font-medium">{selectedSeats.join(", ")}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            <span className="text-[11px] text-slate-500">Total fare</span>
+                                            <span className="text-emerald-400 font-bold text-sm">Rs. {totalFare}</span>
+                                        </div>
                                     </div>
                                     <button
                                         onClick={handleContinue}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-2.5 sm:py-2 sm:px-8 rounded-xl transition-all shadow-lg shadow-emerald-900/30 active:scale-95 whitespace-nowrap cursor-pointer border-none"
+                                        className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm px-6 py-2.5 sm:px-8 sm:py-3 rounded-xl transition-all shadow-lg shadow-emerald-900/40 active:scale-95 whitespace-nowrap cursor-pointer border-none"
                                     >
                                         Proceed to Book
                                     </button>
@@ -246,7 +277,7 @@ export default function BookSeat() {
                                 className={`w-full py-3 sm:py-3.5 px-4 rounded-xl font-bold text-sm sm:text-base text-white transition-all cursor-pointer border-none ${
                                     loading
                                         ? "bg-emerald-600/50 cursor-not-allowed"
-                                        : "bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] shadow-lg shadow-emerald-900/30"
+                                        : "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] shadow-lg shadow-emerald-900/30"
                                 }`}
                             >
                                 {loading ? (

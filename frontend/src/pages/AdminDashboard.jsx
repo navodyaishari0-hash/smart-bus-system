@@ -18,6 +18,7 @@ export default function AdminDashboard() {
     const [routes, setRoutes] = useState([]);
     const [conductors, setConductors] = useState([]);
     const [schedules, setSchedules] = useState([]);
+    const [loadingData, setLoadingData] = useState(true);
     const [activeTab, setActiveTab] = useState('buses');
     const [notifications, setNotifications] = useState([]);
     const [showNotifPanel, setShowNotifPanel] = useState(false);
@@ -74,25 +75,27 @@ export default function AdminDashboard() {
     useEffect(() => { fetchData(); }, []);
 
     const fetchData = async () => {
+        setLoadingData(true);
         try {
             const [resBuses, resRoutes, resSchedules] = await Promise.all([
                 axios.get('/api/buses'),
                 axios.get('/api/routes'),
                 axios.get('/api/schedules')
             ]);
-            setBuses(resBuses.data);
-            setRoutes(resRoutes.data);
-            setSchedules(resSchedules.data);
+            setBuses(resBuses.data || []);
+            setRoutes(resRoutes.data || []);
+            setSchedules(resSchedules.data || []);
         } catch (error) {
             console.error(error);
         }
         try {
             const resConductors = await axios.get('/api/auth/conductors');
-            setConductors(resConductors.data);
-            if (resConductors.data.length > 0 && !selectedConductor) setSelectedConductor(resConductors.data[0]._id);
+            setConductors(resConductors.data || []);
+            if (resConductors.data?.length > 0 && !selectedConductor) setSelectedConductor(resConductors.data[0]._id);
         } catch (error) {
             console.error('Failed to fetch conductors', error);
         }
+        setLoadingData(false);
     };
 
     const toggleBusStatus = async (busId, currentStatus) => {
@@ -197,6 +200,20 @@ export default function AdminDashboard() {
             alert(error.response?.data?.message || 'Failed to assign conductor');
         }
     };
+
+    const Skeleton = ({ lines = 3 }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 0' }}>
+            {Array.from({ length: lines }).map((_, i) => (
+                <div key={i} style={{
+                    height: '4.5rem', borderRadius: '12px',
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 1.5s ease-in-out infinite',
+                    border: '1px solid rgba(255,255,255,0.04)'
+                }} />
+            ))}
+        </div>
+    );
 
     const statusColor = (status) => {
         switch (status) {
@@ -393,17 +410,21 @@ export default function AdminDashboard() {
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {buses.length === 0 ? (
-                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No buses registered.</p>
-                        ) : buses.map(bus => (
-                            <div key={bus._id} style={{
+                        {loadingData ? (
+                            <Skeleton lines={4} />
+                        ) : !buses?.length ? (
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem 0' }}>
+                                No buses registered. Click "+ Add Bus" to get started.
+                            </p>
+                        ) : buses?.map(bus => (
+                            <div key={bus?._id} style={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                 background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px',
                                 border: '1px solid rgba(255,255,255,0.05)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <div style={{ width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', background: '#2d3748', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
-                                        {bus.photo
+                                        {bus?.photo
                                     ? <img src={bus.photo} alt=""
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = '🚌'; }}
@@ -411,15 +432,15 @@ export default function AdminDashboard() {
                                     : '🚌'}
                                     </div>
                                     <div>
-                                        <h4 style={{ margin: '0 0 0.25rem 0' }}>{bus.busNumber}</h4>
+                                        <h4 style={{ margin: '0 0 0.25rem 0' }}>{bus?.busNumber || `Bus #${bus?._id}`}</h4>
                                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                            {bus.type} &middot; Cap: {bus.capacity}
+                                            {bus?.type || 'Standard'} &middot; Cap: {bus?.capacity ?? '?'}
                                         </p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.3rem' }}>
-                                            <select value={bus.conductor?._id || bus.conductorId || ''} onChange={e => handleAssignConductor(bus._id, e.target.value)}
+                                            <select value={bus?.conductor?._id || bus?.conductorId || ''} onChange={e => handleAssignConductor(bus._id, e.target.value)}
                                                 style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}>
                                                 <option value="">No Conductor</option>
-                                                {conductors.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                                {conductors?.map(c => <option key={c?._id} value={c?._id}>{c?.name}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -427,11 +448,11 @@ export default function AdminDashboard() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <span style={{
                                         padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold',
-                                        background: statusBg(bus.status), color: statusColor(bus.status)
+                                        background: statusBg(bus?.status), color: statusColor(bus?.status)
                                     }}>
-                                        {bus.status || 'Active'}
+                                        {bus?.status || 'Active'}
                                     </span>
-                                    <button onClick={() => toggleBusStatus(bus._id, bus.status || 'Active')}
+                                    <button onClick={() => toggleBusStatus(bus._id, bus?.status || 'Active')}
                                         style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}>
                                         Cycle Status
                                     </button>
@@ -479,23 +500,27 @@ export default function AdminDashboard() {
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {routes.length === 0 ? (
-                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No routes created.</p>
-                        ) : routes.map(route => (
-                            <div key={route._id} style={{
+                        {loadingData ? (
+                            <Skeleton lines={4} />
+                        ) : !routes?.length ? (
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem 0' }}>
+                                No routes created. Click "+ Add Route" to get started.
+                            </p>
+                        ) : routes?.map(route => (
+                            <div key={route?._id} style={{
                                 padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px',
                                 border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                             }}>
                                 <div>
-                                    <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--accent-primary)' }}>{route.name}</h4>
+                                    <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--accent-primary)' }}>{route?.name || `Route #${route?._id}`}</h4>
                                     <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem' }}>
-                                        <strong>{route.startLocation || route.stops?.[0] || '?'}</strong> &rarr; <strong>{route.endLocation || route.stops?.[route.stops?.length - 1] || '?'}</strong>
+                                        <strong>{route?.stops?.[0] || '?'}</strong> &rarr; <strong>{route?.stops?.[route?.stops?.length - 1] || '?'}</strong>
                                     </p>
                                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        {route.stops?.length || 0} stops &middot; {route.distance || '?'} km &middot; {route.estimatedDuration || '?'}
+                                        {route?.stops?.length || 0} stops &middot; {route?.distance || '?'} km &middot; {route?.estimatedDuration || route?.estimated_duration || '?'}
                                     </p>
                                 </div>
-                                <button onClick={() => handleDeleteRoute(route._id)}
+                                <button onClick={() => handleDeleteRoute(route?._id)}
                                     style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '0.8rem', cursor: 'pointer', padding: '0.5rem 1rem' }}>
                                     Delete
                                 </button>
@@ -535,19 +560,21 @@ export default function AdminDashboard() {
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {conductors.length === 0 ? (
-                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No conductors registered.</p>
-                        ) : conductors.map(c => (
-                            <div key={c._id} style={{
+                        {loadingData ? (
+                            <Skeleton lines={4} />
+                        ) : !conductors?.length ? (
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem 0' }}>No conductors registered.</p>
+                        ) : conductors?.map(c => (
+                            <div key={c?._id} style={{
                                 padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px',
                                 border: '1px solid rgba(255,255,255,0.04)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', minWidth: '2rem' }}>#{c._id}</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', minWidth: '2rem' }}>#{c?._id}</span>
                                     <div>
-                                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.email}</p>
+                                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{c?.name || 'Unknown'}</p>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c?.email || '—'}</p>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -609,29 +636,31 @@ export default function AdminDashboard() {
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {schedules.length === 0 ? (
-                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No schedules created.</p>
+                        {loadingData ? (
+                            <Skeleton lines={4} />
+                        ) : !schedules?.length ? (
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem 0' }}>No schedules created.</p>
                         ) : schedules.slice().reverse().map(sched => (
-                            <div key={sched._id} style={{
+                            <div key={sched?._id} style={{
                                 padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px',
                                 border: '1px solid rgba(255,255,255,0.05)',
                                 display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'center'
                             }}>
                                 <div>
                                     <p style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold' }}>
-                                        {sched.route?.name || 'Route #' + sched.routeId}
+                                        {sched?.route?.name || `Route #${sched?.routeId}`}
                                     </p>
                                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        {sched.bus?.busNumber || 'Bus #' + sched.busId} &middot;
-                                        {sched.departureDate?.split('T')[0]} at {sched.departureTime}
+                                        {sched?.bus?.busNumber || `Bus #${sched?.busId}`} &middot;
+                                        {sched?.departureDate?.split?.('T')?.[0] || '—'} at {sched?.departureTime || '—'}
                                     </p>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', color: 'var(--accent-primary)', fontSize: '1.1rem' }}>
-                                        Rs. {sched.fare}
+                                        Rs. {sched?.fare ?? '?'}
                                     </p>
                                     <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                        {sched.seats?.length || 0} seats
+                                        {sched?.seats?.length || 0} seats
                                     </p>
                                 </div>
                             </div>
