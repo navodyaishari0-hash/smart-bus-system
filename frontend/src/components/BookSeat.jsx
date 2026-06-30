@@ -138,7 +138,7 @@ export default function BookSeat() {
 
                 {step === 1 ? (
                     <>
-                        <div className="bg-slate-900/50 md:bg-gradient-to-br md:from-slate-800/60 md:to-slate-900/60 p-4 md:p-6 rounded-3xl md:rounded-2xl border border-slate-800 md:border-slate-700/50 md:max-w-3xl mx-auto md:shadow-lg">
+                        <div className="bg-slate-900/50 md:bg-gradient-to-br md:from-slate-800/60 md:to-slate-900/60 p-4 md:p-6 rounded-3xl md:rounded-2xl border border-slate-800 md:border-slate-700/50 mx-auto md:shadow-lg">
                             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700/50 md:border-slate-600/30">
                                 <span className="hidden md:flex items-center gap-2 text-[10px] text-slate-600 font-medium tracking-wider">
                                     <svg className="w-5 h-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7"/></svg>
@@ -155,7 +155,7 @@ export default function BookSeat() {
                                     </span>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-5 md:grid-cols-4 gap-2 md:gap-x-6 md:gap-y-4 max-w-sm md:max-w-none mx-auto items-center justify-center">
+                            <div className="grid grid-cols-5 md:grid-cols-4 gap-2 md:gap-x-6 md:gap-y-4 max-w-sm md:max-w-none">
                                 {(schedule.seats || []).map((seat, index) => {
                                     const isBooked = seat.isBooked || seat.status === "Booked";
                                     const isBroken = seat.isBroken || seat.status === "Broken";

@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from '../config';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, AlertTriangle, Clock } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import AnalyticsDashboard from '../components/Analytics/AnalyticsDashboard';
 import AdminBookings from './AdminBookings';
@@ -22,7 +22,11 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('buses');
     const [notifications, setNotifications] = useState([]);
     const [showNotifPanel, setShowNotifPanel] = useState(false);
+    const [showDelayPanel, setShowDelayPanel] = useState(false);
     const notifRef = useRef(null);
+    const delayRef = useRef(null);
+    const [activeDelays, setActiveDelays] = useState([]);
+    const [delayNotifications, setDelayNotifications] = useState([]);
 
     useEffect(() => {
         const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
@@ -30,18 +34,44 @@ export default function AdminDashboard() {
             console.log('🔔 Socket notification received!', data);
             setNotifications(prev => [data, ...prev]);
         });
+        socket.on('delayUpdated', (data) => {
+            console.log('⏰ Delay update received!', data);
+            if (data.isActive) {
+                setActiveDelays(prev => {
+                    const exists = prev.find(d => d.scheduleId === data.scheduleId);
+                    if (exists) return prev.map(d => d.scheduleId === data.scheduleId ? { ...d, ...data } : d);
+                    return [...prev, data];
+                });
+                setDelayNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev].slice(0, 50));
+            } else {
+                setActiveDelays(prev => prev.filter(d => d.scheduleId !== data.scheduleId));
+                setDelayNotifications(prev => [{ ...data, id: Date.now(), read: false, cleared: true }, ...prev].slice(0, 50));
+            }
+        });
+        socket.on('delayNotification', (data) => {
+            setDelayNotifications(prev => {
+                const exists = prev.find(n => n.scheduleId === data.scheduleId && !n.cleared);
+                if (exists) return prev.map(n => n.scheduleId === data.scheduleId ? { ...data, id: n.id, read: n.read } : n);
+                return [{ ...data, id: Date.now(), read: false }, ...prev].slice(0, 50);
+            });
+        });
         return () => socket.disconnect();
     }, []);
-
+    
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (notifRef.current && !notifRef.current.contains(e.target)) {
                 setShowNotifPanel(false);
             }
+            if (delayRef.current && !delayRef.current.contains(e.target)) {
+                setShowDelayPanel(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const unreadDelayCount = useMemo(() => delayNotifications.filter(n => !n.read).length, [delayNotifications]);
 
     // Bus form
     const [showBusForm, setShowBusForm] = useState(false);
@@ -57,6 +87,47 @@ export default function AdminDashboard() {
     const [routeStops, setRouteStops] = useState('');
     const [routeDistance, setRouteDistance] = useState('');
     const [routeDuration, setRouteDuration] = useState('');
+
+    // Maintenance
+    const [maintenanceRecords, setMaintenanceRecords] = useState([]);
+    const [showMaintForm, setShowMaintForm] = useState(false);
+    const [maintBusId, setMaintBusId] = useState('');
+    const [maintType, setMaintType] = useState('Routine');
+    const [maintDesc, setMaintDesc] = useState('');
+    const [maintSchedDate, setMaintSchedDate] = useState('');
+    const [maintStatus, setMaintStatus] = useState('Scheduled');
+
+    const fetchMaintenance = async () => {
+        try {
+            const { data } = await axios.get('/api/maintenance', { headers: { Authorization: `Bearer ${user.token}` } });
+            setMaintenanceRecords(data);
+        } catch (err) { console.error('Failed to load maintenance records', err); }
+    };
+
+    const handleAddMaintenance = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.post('/api/maintenance', { busId: maintBusId, type: maintType, description: maintDesc, scheduledDate: maintSchedDate, status: maintStatus }, { headers: { Authorization: `Bearer ${user.token}` } });
+            setShowMaintForm(false);
+            setMaintBusId(''); setMaintType('Routine'); setMaintDesc(''); setMaintSchedDate(''); setMaintStatus('Scheduled');
+            fetchMaintenance();
+        } catch (err) { alert(err.response?.data?.message || 'Failed to add maintenance record'); }
+    };
+
+    const handleDeleteMaintenance = async (id) => {
+        if (!window.confirm('Delete this maintenance record?')) return;
+        try {
+            await axios.delete(`/api/maintenance/${id}`, { headers: { Authorization: `Bearer ${user.token}` } });
+            fetchMaintenance();
+        } catch (err) { alert(err.response?.data?.message || 'Failed to delete'); }
+    };
+
+    const handleUpdateMaintStatus = async (id, newStatus) => {
+        try {
+            await axios.put(`/api/maintenance/${id}`, { status: newStatus }, { headers: { Authorization: `Bearer ${user.token}` } });
+            fetchMaintenance();
+        } catch (err) { alert(err.response?.data?.message || 'Failed to update status'); }
+    };
 
     // Schedule form
     const [showScheduleForm, setShowScheduleForm] = useState(false);
@@ -95,6 +166,11 @@ export default function AdminDashboard() {
         } catch (error) {
             console.error('Failed to fetch conductors', error);
         }
+        try {
+            const { data: delays } = await axios.get('/api/delays');
+            setActiveDelays(delays.filter(d => d.isActive));
+        } catch(e) {}
+        fetchMaintenance();
         setLoadingData(false);
     };
 
@@ -247,6 +323,106 @@ export default function AdminDashboard() {
                     <h2 style={{ fontSize: '2rem', margin: 0 }}>Admin Dashboard</h2>
                     <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Manage fleet, routes, schedules, and personnel.</p>
                 </div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div ref={delayRef} style={{ position: 'relative' }}>
+                    <button onClick={() => setShowDelayPanel(prev => !prev)} style={{
+                        background: unreadDelayCount > 0 ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.08)',
+                        border: unreadDelayCount > 0 ? '1px solid rgba(251,191,36,0.3)' : 'none',
+                        borderRadius: '10px', padding: '0.6rem', cursor: 'pointer', position: 'relative',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s'
+                    }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                        onMouseLeave={e => e.currentTarget.style.background = unreadDelayCount > 0 ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.08)'}
+                    >
+                        <Clock size={20} style={{ color: unreadDelayCount > 0 ? '#fbbf24' : 'var(--text-primary)' }} />
+                        {unreadDelayCount > 0 && (
+                            <span style={{
+                                position: 'absolute', top: -4, right: -4,
+                                background: '#f59e0b', color: 'white',
+                                fontSize: '0.6rem', fontWeight: 700,
+                                minWidth: '18px', height: '18px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: '50%', padding: '0 4px',
+                                boxShadow: '0 2px 8px rgba(245,158,11,0.5)'
+                            }}>
+                                {unreadDelayCount > 99 ? '99+' : unreadDelayCount}
+                            </span>
+                        )}
+                    </button>
+                    {showDelayPanel && (
+                        <div style={{
+                            position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem',
+                            width: '400px', maxHeight: '480px',
+                            background: 'rgba(15,23,42,0.97)',
+                            backdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '14px',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                            zIndex: 9999, overflow: 'hidden',
+                            display: 'flex', flexDirection: 'column'
+                        }}>
+                            <div style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.06)'
+                            }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                    Delay Alerts ({delayNotifications.length})
+                                </span>
+                                <button onClick={() => setDelayNotifications([])}
+                                    style={{
+                                        background: 'rgba(239,68,68,0.15)', border: 'none', borderRadius: '6px',
+                                        color: '#f87171', cursor: 'pointer', fontSize: '0.75rem',
+                                        padding: '0.3rem 0.7rem', fontWeight: 600
+                                    }}
+                                >Clear All</button>
+                            </div>
+                            <div style={{ overflowY: 'auto', flex: 1 }}>
+                                {delayNotifications.length === 0 ? (
+                                    <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                        <Clock size={32} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+                                        <p style={{ margin: 0 }}>No delay alerts</p>
+                                    </div>
+                                ) : delayNotifications.map(n => (
+                                    <div key={n.id} onClick={() => setDelayNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                                        style={{
+                                            padding: '0.75rem 1.25rem',
+                                            borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                            background: n.read ? 'transparent' : 'rgba(251,191,36,0.05)',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                            <span style={{
+                                                width: '8px', height: '8px', borderRadius: '50%',
+                                                background: n.cleared ? '#ef4444' : (n.read ? '#334155' : '#fbbf24'),
+                                                flexShrink: 0, marginTop: '6px'
+                                            }} />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: '0 0 0.15rem 0', fontSize: '0.8rem', fontWeight: 600, color: n.cleared ? '#f87171' : '#fbbf24' }}>
+                                                    {n.cleared ? 'Delay Cleared' : `Bus ${n.busNumber || '#'+n.scheduleId} — ${n.routeName || ''}`}
+                                                </p>
+                                                {n.cleared ? (
+                                                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8' }}>Schedule delay has been cleared.</p>
+                                                ) : (
+                                                    <>
+                                                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.72rem', color: '#94a3b8' }}>
+                                                            {n.delayMinutes} min delay{n.reason ? ` — ${n.reason}` : ''}
+                                                        </p>
+                                                        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '6px', padding: '0.3rem 0.5rem', display: 'flex', gap: '0.75rem', fontSize: '0.7rem' }}>
+                                                            <span style={{ color: '#94a3b8' }}>Orig: <span style={{ textDecoration: 'line-through' }}>{n.originalDepartureTime}</span></span>
+                                                            <span style={{ color: '#4ade80' }}>New: <strong>{n.newDepartureTime}</strong></span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
                 <div ref={notifRef} style={{ position: 'relative' }}>
                     <button onClick={() => setShowNotifPanel(prev => !prev)} style={{
                         background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '10px',
@@ -356,15 +532,50 @@ export default function AdminDashboard() {
                         </div>
                     )}
                 </div>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                {activeDelays.length > 0 && (
+                    <div className="w-full bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 text-amber-300 text-sm flex flex-col gap-3 shadow-lg shadow-amber-500/5">
+                        <div className="flex items-center gap-2 font-bold text-base">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                            {activeDelays.length} active delay{activeDelays.length > 1 ? 's' : ''}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {activeDelays.map((d, i) => (
+                                <div key={d.scheduleId || i} className="flex items-center gap-2 bg-slate-900/60 border border-amber-500/10 rounded-xl px-3 py-2 text-xs">
+                                    <span className="text-slate-300 font-semibold">{d.busNumber || `Bus #${d.scheduleId}`}</span>
+                                    <span className="text-amber-400 font-bold">— {d.delayMinutes}min</span>
+                                    {d.reason && <span className="text-slate-500 italic">({d.reason})</span>}
+                                    <span className="text-slate-600 mx-1">|</span>
+                                    <span className="text-slate-500 line-through">{d.originalDepartureTime}</span>
+                                    <span className="text-emerald-400 font-bold font-mono tracking-wide">{d.newDepartureTime}</span>
+                                    <button onClick={async () => {
+                                        try {
+                                            const scheduleId = d.scheduleId;
+                                            const sched = schedules.find(s => s._id === scheduleId);
+                                            if (sched) {
+                                                await axios.post(`/api/schedules/${scheduleId}/delay`, { delayMinutes: 0 }, {
+                                                    headers: { Authorization: `Bearer ${user.token}` }
+                                                });
+                                            }
+                                        } catch (e) { console.error('Failed to clear delay', e); }
+                                    }} className="bg-red-500/15 hover:bg-red-500/25 text-red-400 rounded-lg px-2 py-0.5 text-xs font-semibold transition-all cursor-pointer border-0">
+                                        Clear
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <button style={tabStyle('buses')} onClick={() => setActiveTab('buses')}>Buses ({buses.length})</button>
                 <button style={tabStyle('routes')} onClick={() => setActiveTab('routes')}>Routes ({routes.length})</button>
                 <button style={tabStyle('schedules')} onClick={() => setActiveTab('schedules')}>Schedules ({schedules.length})</button>
                 <button style={tabStyle('conductors')} onClick={() => setActiveTab('conductors')}>Conductors ({conductors.length})</button>
                 <button style={tabStyle('analytics')} onClick={() => setActiveTab('analytics')}>Analytics</button>
                 <button style={tabStyle('bookings')} onClick={() => setActiveTab('bookings')}>Bookings</button>
+                <button style={tabStyle('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
             </div>
 
             {activeTab === 'buses' && (
@@ -594,6 +805,89 @@ export default function AdminDashboard() {
             {activeTab === 'analytics' && <AnalyticsDashboard />}
             {activeTab === 'bookings' && <AdminBookings />}
 
+            {activeTab === 'maintenance' && (
+                <div className="glass-panel">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: 0 }}>Bus Maintenance</h3>
+                        <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }} onClick={() => setShowMaintForm(!showMaintForm)}>
+                            {showMaintForm ? 'Cancel' : '+ Add Record'}
+                        </button>
+                    </div>
+
+                    {showMaintForm && (
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid var(--glass-border)' }}>
+                            <h4 style={{ marginBottom: '1rem', color: 'var(--accent-primary)' }}>New Maintenance Record</h4>
+                            <form onSubmit={handleAddMaintenance} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <select value={maintBusId} onChange={e => setMaintBusId(e.target.value)} required>
+                                        <option value="">Select Bus</option>
+                                        {buses.map(b => <option key={b._id} value={b._id}>{b.busNumber} ({b.type})</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <select value={maintType} onChange={e => setMaintType(e.target.value)} required>
+                                        <option value="Routine">Routine</option>
+                                        <option value="Repair">Repair</option>
+                                        <option value="Inspection">Inspection</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <input type="text" placeholder="Description" value={maintDesc} onChange={e => setMaintDesc(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <input type="date" value={maintSchedDate} onChange={e => setMaintSchedDate(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <select value={maintStatus} onChange={e => setMaintStatus(e.target.value)}>
+                                        <option value="Scheduled">Scheduled</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <button type="submit" className="btn btn-success" style={{ width: '100%' }}>Create Record</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {!maintenanceRecords.length ? (
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem 0' }}>No maintenance records.</p>
+                        ) : maintenanceRecords.slice().reverse().map(rec => (
+                            <div key={rec._id} style={{
+                                padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'center'
+                            }}>
+                                <div>
+                                    <p style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold' }}>
+                                        {rec.busNumber || `Bus #${rec.busId}`} — {rec.type}
+                                    </p>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        {rec.description || '—'} &middot; {rec.scheduledDate?.split?.('T')?.[0] || '—'}
+                                        {rec.completedDate ? ` → ${rec.completedDate.split('T')[0]}` : ''}
+                                    </p>
+                                </div>
+                                <div style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <select value={rec.status} onChange={e => handleUpdateMaintStatus(rec._id, e.target.value)}
+                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', background: '#1e293b', border: '1px solid #334155', color: '#f1f5f9', borderRadius: '6px' }}>
+                                        <option value="Scheduled">Scheduled</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                    <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.2)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.3)' }}
+                                        onClick={() => handleDeleteMaintenance(rec._id)}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {activeTab === 'schedules' && (
                 <div className="glass-panel">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
@@ -649,6 +943,11 @@ export default function AdminDashboard() {
                                 <div>
                                     <p style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold' }}>
                                         {sched?.route?.name || `Route #${sched?.routeId}`}
+                                        {sched?.delayInfo?.isActive && (
+                                            <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '999px', background: '#78350f30', color: '#fbbf24', border: '1px solid #92400e', verticalAlign: 'middle' }}>
+                                                {sched.delayInfo.delayMinutes}min delay
+                                            </span>
+                                        )}
                                     </p>
                                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                         {sched?.bus?.busNumber || `Bus #${sched?.busId}`} &middot;

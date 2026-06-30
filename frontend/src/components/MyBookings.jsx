@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
+import { Clock, AlertTriangle } from 'lucide-react';
 
 export default function MyBookings() {
     const [bookings, setBookings] = useState([]);
@@ -13,6 +14,23 @@ export default function MyBookings() {
             .then(res => setBookings(res.data))
             .catch(err => { console.error(err); setFetchError(err.response?.data?.message || 'Failed to load bookings'); });
     }, [user]);
+
+    const delayBadge = (booking) => {
+        const dl = booking.delayInfo;
+        if (!dl || !dl.delayMinutes) {
+            return (
+                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 text-xs font-semibold rounded-full inline-flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+                    On Time
+                </span>
+            );
+        }
+        return (
+            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-1 text-xs font-semibold rounded-full inline-flex items-center gap-1.5">
+                <AlertTriangle size={11} /> {dl.delayMinutes} min delay
+            </span>
+        );
+    };
 
     return (
         <div className="animate-fade-in">
@@ -47,7 +65,7 @@ export default function MyBookings() {
                             }}
                             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--success)', borderRadius: '0 4px 4px 0' }} />
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', borderRadius: '0 4px 4px 0', background: booking.delayInfo?.delayMinutes ? 'var(--warning)' : 'var(--success)' }} />
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -58,13 +76,16 @@ export default function MyBookings() {
                                         Bus: {booking.schedule?.bus?.busNumber}
                                     </p>
                                 </div>
-                                <span style={{
-                                    background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)',
-                                    padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.7rem',
-                                    fontWeight: 'bold', whiteSpace: 'nowrap', border: '1px solid rgba(16,185,129,0.3)'
-                                }}>
-                                    {booking.status}
-                                </span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+                                    {delayBadge(booking)}
+                                    <span style={{
+                                        background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)',
+                                        padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.7rem',
+                                        fontWeight: 'bold', whiteSpace: 'nowrap', border: '1px solid rgba(16,185,129,0.3)'
+                                    }}>
+                                        {booking.status}
+                                    </span>
+                                </div>
                             </div>
 
                             <div style={{
@@ -72,11 +93,16 @@ export default function MyBookings() {
                                 background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '10px'
                             }}>
                                 <div>
-                                    <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.3px' }}>DATE & TIME</p>
-                                    <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.8rem' }}>
-                                        {booking.schedule?.departureDate?.split('T')[0]}<br />
-                                        {booking.schedule?.departureTime}
-                                    </p>
+                                    <p className="text-slate-500 text-[0.65rem] tracking-widest uppercase font-semibold mb-1">Departure</p>
+                                    <p className="text-slate-200 text-sm font-semibold">{booking.schedule?.departureDate?.split('T')[0]}</p>
+                                    {booking.delayInfo?.delayMinutes ? (
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-slate-500 line-through text-sm">{booking.delayInfo.originalDepartureTime}</span>
+                                            <span className="text-emerald-400 font-extrabold text-lg tracking-wide font-mono">{booking.delayInfo.newDepartureTime}</span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-slate-100 text-base font-bold mt-0.5">{booking.schedule?.departureTime}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.3px' }}>SEATS</p>
@@ -84,7 +110,43 @@ export default function MyBookings() {
                                         {Array.isArray(booking.seatsBooked) ? booking.seatsBooked.join(', ') : ''}
                                     </p>
                                 </div>
+                                {booking.delayInfo?.delayMinutes && (
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.3px' }}>DELAY INFO</p>
+                                        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.75rem', color: '#fbbf24' }}>
+                                            {booking.delayInfo.delayMinutes} min{booking.delayInfo.reason ? ` — ${booking.delayInfo.reason}` : ''}
+                                        </p>
+                                    </div>
+                                )}
+                                {booking.discountType && booking.discountType !== 'none' && (
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.3px' }}>DISCOUNT</p>
+                                        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.8rem', color: '#10b981' }}>
+                                            {booking.discountType} ({booking.discountPercentage}%)
+                                        </p>
+                                    </div>
+                                )}
+                                {booking.emergencyName && (
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.3px' }}>EMERGENCY CONTACT</p>
+                                        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.8rem' }}>
+                                            {booking.emergencyName}{booking.emergencyPhone ? ` (${booking.emergencyPhone})` : ''}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
+
+                            {booking.delayInfo?.delayMinutes && (
+                                <div className="bg-amber-500/5 border-l-4 border-amber-500 text-amber-300 p-3 text-xs md:text-sm rounded-r-xl flex items-center gap-2 mt-2">
+                                    <AlertTriangle size={15} className="shrink-0 text-amber-400" />
+                                    <span>
+                                        Delayed by <strong className="text-amber-200">{booking.delayInfo.delayMinutes} min</strong>
+                                        {booking.delayInfo.reason ? ` — ${booking.delayInfo.reason}` : ''}.
+                                        {' '}New departure: <strong className="text-emerald-400">{booking.delayInfo.newDepartureTime}</strong>
+                                        {' '}<span className="text-slate-600">(was {booking.delayInfo.originalDepartureTime})</span>
+                                    </span>
+                                </div>
+                            )}
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '0.75rem', borderTop: '1px solid var(--glass-border)' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Fare</span>

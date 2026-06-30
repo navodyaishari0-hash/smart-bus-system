@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "init-db": "node init-db.js",
+    "update-conductor": "node update-conductor-data.js",
     "dev": "node --watch server.js"
   },
   "author": "",
@@ -16,6 +17,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.5.0",
     "pg": "^8.22.0",
     "socket.io": "^4.8.3"
   }

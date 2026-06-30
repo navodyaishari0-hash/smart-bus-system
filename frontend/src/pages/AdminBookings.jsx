@@ -188,6 +188,11 @@ export default function AdminBookings() {
                                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                                         {passengerEmail}
                                                     </span>
+                                                    {b.emergencyName && (
+                                                        <span style={{ fontSize: '0.65rem', color: '#f472b6', marginTop: '2px' }}>
+                                                            ⚕ {b.emergencyName}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td style={tdStyle}>
@@ -229,6 +234,9 @@ export default function AdminBookings() {
                                             </td>
                                             <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>
                                                 Rs. {b.totalFare?.toLocaleString() || '0'}
+                                                {b.discountType && b.discountType !== 'none'
+                                                  ? <><br /><span style={{ fontSize: '0.65rem', fontWeight: 400, color: '#10b981' }}>-{b.discountPercentage}% {b.discountType}</span></>
+                                                  : null}
                                             </td>
                                             <td style={{ ...tdStyle, textAlign: 'center' }}>
                                                 <span style={{

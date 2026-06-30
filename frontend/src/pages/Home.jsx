@@ -3,6 +3,14 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
 
+/* return local YYYY-MM-DD without UTC shift */
+function localDateStr(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 export default function Home() {
     const [routes, setRoutes] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -11,7 +19,7 @@ export default function Home() {
     const [selectedDestination, setSelectedDestination] = useState('');
     const navigate = useNavigate();
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr(new Date());
     const [selectedDate, setSelectedDate] = useState(today);
     const [searching, setSearching] = useState(false);
     const [searched, setSearched] = useState(false);
@@ -130,7 +138,7 @@ export default function Home() {
 
                         <div style={{ minWidth: '140px' }}>
                             <label style={labelStyle}>DATE</label>
-                            <input type="date" value={selectedDate} min={today} onChange={(e) => setSelectedDate(e.target.value)}
+                            <input type="date" value={selectedDate} min={today} max={localDateStr(new Date(Date.now() + 7*86400000))} onChange={(e) => setSelectedDate(e.target.value)}
                                 style={inputBase}
                                 onFocus={e => e.target.style.borderColor = '#3b82f6'}
                                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
@@ -173,7 +181,7 @@ export default function Home() {
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {schedules.map(schedule => (
-                                <div key={schedule._id} onClick={() => navigate(`/book-seats/${schedule._id}?startStop=${encodeURIComponent(selectedOrigin)}&endStop=${encodeURIComponent(selectedDestination)}`)}
+                                <div key={schedule._id} onClick={() => navigate(`/book-seats/${schedule._id}?startStop=${encodeURIComponent(selectedOrigin)}&endStop=${encodeURIComponent(selectedDestination)}&date=${encodeURIComponent(selectedDate)}`)}
                                     style={{
                                         background: 'rgba(255,255,255,0.08)', padding: '1rem',
                                         borderRadius: '16px', display: 'flex', flexDirection: 'column',
@@ -218,7 +226,7 @@ export default function Home() {
                                             {schedule.bus?.type}
                                         </span>
                                     </div>
-                                    <button onClick={(e) => { e.stopPropagation(); navigate(`/book-seats/${schedule._id}?startStop=${encodeURIComponent(selectedOrigin)}&endStop=${encodeURIComponent(selectedDestination)}`); }}
+                                    <button onClick={(e) => { e.stopPropagation(); navigate(`/book-seats/${schedule._id}?startStop=${encodeURIComponent(selectedOrigin)}&endStop=${encodeURIComponent(selectedDestination)}&date=${encodeURIComponent(selectedDate)}`); }}
                                         style={{
                                             width: '100%', padding: '0.65rem', fontSize: '0.85rem', fontWeight: 600,
                                             background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
